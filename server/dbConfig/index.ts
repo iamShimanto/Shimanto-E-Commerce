@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { env } from "../utils/envValidation.ts";
+import { env } from "../utils/envValidation";
 
 const dbConfig = async () => {
 	await mongoose

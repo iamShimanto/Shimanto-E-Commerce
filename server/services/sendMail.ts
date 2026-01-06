@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { env } from "../utils/envValidation.ts";
+import { env } from "../utils/envValidation";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -22,3 +22,5 @@ export const sendMail = async (
     html: emailTemplate({ code: otp, appName: "Shimanto" }),
   });
 };
+
+
