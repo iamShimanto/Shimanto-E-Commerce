@@ -1,7 +1,8 @@
-import { model, Schema, type InferSchemaType } from "mongoose";
+import { model, Schema, Types, type InferSchemaType } from "mongoose";
 import bcrypt from "bcrypt";
 
-interface user {
+export interface user {
+  _id: Types.ObjectId;
   fullName: string;
   email: string;
   password: string;

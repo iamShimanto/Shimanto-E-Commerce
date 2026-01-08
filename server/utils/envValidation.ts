@@ -1,10 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { cleanEnv, port, str } from "envalid";
+import { cleanEnv, email, port, str, url } from "envalid";
 
 export const env = cleanEnv(process.env, {
   PORT: port({ default: 5000 }),
   MONGODB_URI: str(),
-  EMAIL_USER: str(),
+  EMAIL_USER: email(),
   EMAIL_PASS: str(),
+  NODE_ENV: str({ choices: ["development", "production"] }),
+  JWT_SECRET: str(),
+  CLIENT_URL: url(),
 });

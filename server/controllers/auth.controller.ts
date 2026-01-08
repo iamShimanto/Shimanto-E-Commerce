@@ -5,6 +5,11 @@ import { sendMail } from "../services/sendMail";
 import { generateOtp } from "../utils/Generator";
 import { errorResponse, successResponse } from "../utils/ResponseHandler";
 import { emailTemplate } from "../services/emailTemp";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/tokenHelper";
+import { env } from "../utils/envValidation";
 
 export const craeteUser: RequestHandler = async (req, res) => {
   try {
@@ -119,6 +124,25 @@ export const logInUser: RequestHandler = async (req, res) => {
 
     const checkPass = await user.comparePassword(password);
     if (!checkPass) return errorResponse(res, 400, "Invalid Request");
+
+    if (!user.isVerified) return errorResponse(res, 400, "Email not verified");
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    const isProd = env.NODE_ENV === "production";
+
+    res.cookie("jwt_access", accessToken, {
+      httpOnly: isProd,
+      secure: isProd,
+      maxAge: 600000,
+    });
+
+    res.cookie("jwt_refresh", refreshToken, {
+      httpOnly: isProd,
+      secure: isProd,
+      maxAge: 1296000000,
+    });
 
     return successResponse(res, 200, "Login Successful");
   } catch (error) {
