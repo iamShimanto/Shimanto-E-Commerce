@@ -7,18 +7,16 @@ export const authMiddleWare: RequestHandler = (req, res, next) => {
   try {
     const accessToken = req.cookies.jwt_access;
 
-    if(!accessToken){
-        return errorResponse(res, 400, "Invalid Request")
+    if (!accessToken) {
+      return errorResponse(res, 400, "Invalid Request");
     }
 
-    const decoded = jwt.verify(accessToken, env.JWT_SECRET)
-    if(!decoded) return errorResponse(res, 400, "Invalid Request")
+    const decoded = jwt.verify(accessToken, env.JWT_SECRET);
+    if (!decoded) return errorResponse(res, 400, "Invalid Request");
 
+    req.user = decoded;
 
-    // req.user = decoded
-
-
-
+    next();
   } catch (error) {
     return errorResponse(res, 400, "Invalid Request");
   }

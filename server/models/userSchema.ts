@@ -1,7 +1,7 @@
 import { model, Schema, Types, type InferSchemaType } from "mongoose";
 import bcrypt from "bcrypt";
 
-export interface user {
+interface user {
   _id: Types.ObjectId;
   fullName: string;
   email: string;
@@ -12,6 +12,7 @@ export interface user {
   isVerified: boolean;
   otp: number | null;
   otpExpires: Date;
+  resetPassLinkExpires: Date;
   comparePassword(pass: string): Promise<boolean>;
 }
 
@@ -50,6 +51,9 @@ const userSchema = new Schema<user>(
       default: null,
     },
     otpExpires: {
+      type: Date,
+    },
+    resetPassLinkExpires: {
       type: Date,
     },
   },

@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendMail = async (
   email: string,
-  otp: number,
+  otp: number | string,
   subject: string,
   emailTemplate: any
 ) => {

@@ -1,8 +1,14 @@
-import jwt from "jsonwebtoken";
-import { user } from "../models/userSchema";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "./envValidation";
+import { Types } from "mongoose";
 
-export const generateAccessToken = (user: user) => {
+interface jwtUserPayload {
+  _id: Types.ObjectId;
+  email: string;
+  role: string;
+}
+
+export const generateAccessToken = (user: jwtUserPayload) => {
   return jwt.sign(
     {
       _id: user._id,
@@ -16,7 +22,7 @@ export const generateAccessToken = (user: user) => {
   );
 };
 
-export const generateRefreshToken = (user: user) => {
+export const generateRefreshToken = (user: jwtUserPayload) => {
   return jwt.sign(
     {
       _id: user._id,
@@ -30,7 +36,7 @@ export const generateRefreshToken = (user: user) => {
   );
 };
 
-export const generateResentPassToken = (user: user) => {
+export const generateResentPassToken = (user: jwtUserPayload) => {
   return jwt.sign(
     {
       _id: user._id,
@@ -43,12 +49,8 @@ export const generateResentPassToken = (user: user) => {
   );
 };
 
-export const verifyToken = (token: string) => {
-  try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+export const verifyToken = (token: string): JwtPayload => {
+  const decoded = jwt.verify(token, env.JWT_SECRET);
 
-    return decoded;
-  } catch (error) {
-    return null;
-  }
+  return decoded as JwtPayload;
 };

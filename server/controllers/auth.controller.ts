@@ -4,10 +4,11 @@ import { UserModel } from "../models/userSchema";
 import { sendMail } from "../services/sendMail";
 import { generateOtp } from "../utils/Generator";
 import { errorResponse, successResponse } from "../utils/ResponseHandler";
-import { emailTemplate } from "../services/emailTemp";
+import { emailTemplate, resetPassTemplate } from "../services/emailTemp";
 import {
   generateAccessToken,
   generateRefreshToken,
+  generateResentPassToken,
 } from "../utils/tokenHelper";
 import { env } from "../utils/envValidation";
 
@@ -147,5 +148,42 @@ export const logInUser: RequestHandler = async (req, res) => {
     return successResponse(res, 200, "Login Successful");
   } catch (error) {
     return errorResponse(res, 500, "Internal server error");
+  }
+};
+
+export const resetPassword: RequestHandler = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) return errorResponse(res, 400, "Email is required");
+    if (!isValidEmail(email))
+      return errorResponse(res, 400, "Enter a valid email");
+
+    const user = await UserModel.findOne({ email });
+    if (!user) return errorResponse(res, 400, "Email is not registered");
+
+    if (
+      user.resetPassLinkExpires &&
+      user.resetPassLinkExpires.getTime() > Date.now()
+    ) {
+      return errorResponse(
+        res,
+        400,
+        "Password Reset link already sent to your email"
+      );
+    }
+
+    const resetPassToken = generateResentPassToken(user);
+
+    const resetPassLink = `${env.CLIENT_URL}/resetpass?sec=${resetPassToken}`;
+
+    user.resetPassLinkExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    sendMail(email, resetPassLink, "Reset Password Link", resetPassTemplate);
+
+    return successResponse(res, 200, "Password reset link sent to your email");
+  } catch (error) {
+    return errorResponse(res, 500, "Internal server error", error);
   }
 };
