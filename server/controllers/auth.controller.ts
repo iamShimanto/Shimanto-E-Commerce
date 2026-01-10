@@ -3,7 +3,7 @@ import { isValidEmail } from "../utils/validation";
 import { UserModel } from "../models/userSchema";
 import { sendMail } from "../services/sendMail";
 import { generateOtp } from "../utils/Generator";
-import { errorResponse, successResponse } from "../utils/ResponseHandler";
+import { responseHandler } from "../utils/ResponseHandler";
 import { emailTemplate, resetPassTemplate } from "../services/emailTemp";
 import {
   generateAccessToken,
@@ -15,16 +15,17 @@ import { env } from "../utils/envValidation";
 export const craeteUser: RequestHandler = async (req, res) => {
   try {
     const { fullName, email, password, phone, address } = req.body;
-    if (!email) return errorResponse(res, 400, "Email is Required");
+    if (!email) return responseHandler.error(res, 400, "Email is required");
     if (!isValidEmail(email))
-      return errorResponse(res, 400, "Enter a valid email");
-    if (!password) return errorResponse(res, 400, "Password is required");
+      return responseHandler.error(res, 400, "Enter a valid email");
+    if (!password)
+      return responseHandler.error(res, 400, "Password is required");
     if (password.length < 6)
-      return errorResponse(res, 400, "Password must be 6 characters");
+      return responseHandler.error(res, 400, "Password must be 6 characters");
 
     const isExistUser = await UserModel.findOne({ email });
     if (isExistUser) {
-      return errorResponse(res, 400, "User already Exist!");
+      return responseHandler.error(res, 400, "User already Exist!");
     }
 
     const emailOTP = generateOtp();
@@ -44,13 +45,13 @@ export const craeteUser: RequestHandler = async (req, res) => {
     sendMail(email, emailOTP, "Email Verification Code", template);
     user.save();
 
-    successResponse(
+    responseHandler.success(
       res,
       201,
       "User Registration Successfull and Email verify code sent to your email"
     );
   } catch (error) {
-    errorResponse(res, 500, "Internel server error", error);
+    responseHandler.error(res, 500, "Internel server error", error);
   }
 };
 
@@ -58,7 +59,7 @@ export const verifyOtp: RequestHandler = async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) {
-      return errorResponse(res, 400, "Invalid request");
+      return responseHandler.error(res, 400, "Invalid request");
     }
 
     const user = await UserModel.findOne({
@@ -69,16 +70,16 @@ export const verifyOtp: RequestHandler = async (req, res) => {
     });
 
     if (!user) {
-      return errorResponse(res, 400, "Invalid Request");
+      return responseHandler.error(res, 400, "Invalid Request");
     }
 
     user.otp = null;
     user.isVerified = true;
     user.save();
 
-    return successResponse(res, 200, "Email verified successfully");
+    return responseHandler.error(res, 200, "Email verified successfully");
   } catch (error) {
-    return errorResponse(res, 500, "Internal server error", error);
+    return responseHandler.error(res, 500, "Internal server error", error);
   }
 };
 
@@ -86,7 +87,7 @@ export const resendOtp: RequestHandler = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email || !isValidEmail(email))
-      return errorResponse(res, 400, "Invalid Request");
+      return responseHandler.error(res, 400, "Invalid Request");
 
     const user = await UserModel.findOne({
       email,
@@ -94,7 +95,7 @@ export const resendOtp: RequestHandler = async (req, res) => {
       otpExpires: { $lt: new Date() },
     });
     if (!user) {
-      return errorResponse(res, 400, "Invalid Request");
+      return responseHandler.error(res, 400, "Invalid Request");
     }
 
     const otp = generateOtp();
@@ -102,31 +103,31 @@ export const resendOtp: RequestHandler = async (req, res) => {
     user.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
     user.save();
     sendMail(email, otp, "Email Verification Code", emailTemplate);
-    return successResponse(
+    return responseHandler.success(
       res,
       200,
       "Email verification code sent successfully"
     );
   } catch (error) {
-    return errorResponse(res, 500, "Internal server error", error);
+    return responseHandler.error(res, 500, "Internal server error", error);
   }
 };
 
 export const logInUser: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email) return errorResponse(res, 400, "Email is required");
+    if (!email) return responseHandler.error(res, 400, "Email is required");
     if (!isValidEmail(email))
-      return errorResponse(res, 400, "Enter a valid email");
-    if (!password) return errorResponse(res, 400, "Password is required");
+      return responseHandler.error(res, 400, "Enter a valid email");
+    if (!password) return responseHandler.error(res, 400, "Password is required");
 
     const user = await UserModel.findOne({ email });
-    if (!user) return errorResponse(res, 400, "Invalid Request");
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
 
     const checkPass = await user.comparePassword(password);
-    if (!checkPass) return errorResponse(res, 400, "Invalid Request");
+    if (!checkPass) return responseHandler.error(res, 400, "Invalid Request");
 
-    if (!user.isVerified) return errorResponse(res, 400, "Email not verified");
+    if (!user.isVerified) return responseHandler.error(res, 400, "Email not verified");
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -145,9 +146,9 @@ export const logInUser: RequestHandler = async (req, res) => {
       maxAge: 1296000000,
     });
 
-    return successResponse(res, 200, "Login Successful");
+    return responseHandler.success(res, 200, "Login Successful");
   } catch (error) {
-    return errorResponse(res, 500, "Internal server error");
+    return responseHandler.error(res, 500, "Internal server error");
   }
 };
 
@@ -155,18 +156,18 @@ export const resetPassword: RequestHandler = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) return errorResponse(res, 400, "Email is required");
+    if (!email) return responseHandler.error(res, 400, "Email is required");
     if (!isValidEmail(email))
-      return errorResponse(res, 400, "Enter a valid email");
+      return responseHandler.error(res, 400, "Enter a valid email");
 
     const user = await UserModel.findOne({ email });
-    if (!user) return errorResponse(res, 400, "Email is not registered");
+    if (!user) return responseHandler.error(res, 400, "Email is not registered");
 
     if (
       user.resetPassLinkExpires &&
       user.resetPassLinkExpires.getTime() > Date.now()
     ) {
-      return errorResponse(
+      return responseHandler.error(
         res,
         400,
         "Password Reset link already sent to your email"
@@ -182,8 +183,8 @@ export const resetPassword: RequestHandler = async (req, res) => {
 
     sendMail(email, resetPassLink, "Reset Password Link", resetPassTemplate);
 
-    return successResponse(res, 200, "Password reset link sent to your email");
+    return responseHandler.success(res, 200, "Password reset link sent to your email");
   } catch (error) {
-    return errorResponse(res, 500, "Internal server error", error);
+    return responseHandler.error(res, 500, "Internal server error", error);
   }
 };
