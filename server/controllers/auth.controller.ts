@@ -9,6 +9,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
   generateResentPassToken,
+  verifyToken,
 } from "../utils/tokenHelper";
 import { env } from "../utils/envValidation";
 
@@ -188,3 +189,26 @@ export const resetPassword: RequestHandler = async (req, res) => {
     return responseHandler.error(res, 500, "Internal server error", error);
   }
 };
+
+
+export const resetPasswordChange : RequestHandler = async (req , res )=>{
+  try {
+    const {token} = req.params
+    const {newPassword} = req.body
+    
+    if(!token) return responseHandler.error(res, 400, "Token required")
+    const decoded = await verifyToken(token)
+    if(!decoded) return responseHandler.error(res, 400, "Invalid Request")
+    if(!newPassword) return responseHandler.error(res, 400, "")
+    
+    const user = await UserModel.findOne({email:decoded.email})
+    if(!user) return responseHandler.error(res, 400, "Invalid Request")
+    
+    user.password = newPassword
+    user.save()
+
+    return responseHandler.success(res, 200, "User password updated successfully")
+  } catch (error) {
+    responseHandler.error(res, 500, "Internal server error", error)
+  }
+}

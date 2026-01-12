@@ -8,5 +8,6 @@ router.post("/verifyotp", auth.verifyOtp);
 router.post("/resendotp", auth.resendOtp);
 router.post("/login", auth.logInUser);
 router.post("/resetpassword", auth.resetPassword)
+router.post("/resetpasswordchange/:token", auth.resetPasswordChange)
 
 export default router;
