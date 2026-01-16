@@ -37,7 +37,7 @@ export const generateRefreshToken = (user: jwtUserPayload) => {
   );
 };
 
-export const generateResetPassToken = () => {
+export const generateResetPassToken = () : {resetToken: string, resetTokenHash: string} => {
   const resetToken = crypto.randomBytes(16).toString("hex");
 
   const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
@@ -45,7 +45,7 @@ export const generateResetPassToken = () => {
   return {resetToken, resetTokenHash}
 }
 
-export const verifyResetPassToken = (token: string) => {
+export const verifyResetPassToken = (token: string) : string => {
   const resetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
   return resetTokenHash;
