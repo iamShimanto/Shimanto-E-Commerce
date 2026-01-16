@@ -5,12 +5,7 @@ import { sendMail } from "../services/sendMail";
 import { generateOtp } from "../utils/Generator";
 import { responseHandler } from "../utils/ResponseHandler";
 import { emailTemplate, resetPassTemplate } from "../services/emailTemp";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  generateResentPassToken,
-  verifyToken,
-} from "../utils/tokenHelper";
+import * as tokenHelper from "../utils/tokenHelper";
 import { env } from "../utils/envValidation";
 
 export const craeteUser: RequestHandler = async (req, res) => {
@@ -120,7 +115,8 @@ export const logInUser: RequestHandler = async (req, res) => {
     if (!email) return responseHandler.error(res, 400, "Email is required");
     if (!isValidEmail(email))
       return responseHandler.error(res, 400, "Enter a valid email");
-    if (!password) return responseHandler.error(res, 400, "Password is required");
+    if (!password)
+      return responseHandler.error(res, 400, "Password is required");
 
     const user = await UserModel.findOne({ email });
     if (!user) return responseHandler.error(res, 400, "Invalid Request");
@@ -128,10 +124,11 @@ export const logInUser: RequestHandler = async (req, res) => {
     const checkPass = await user.comparePassword(password);
     if (!checkPass) return responseHandler.error(res, 400, "Invalid Request");
 
-    if (!user.isVerified) return responseHandler.error(res, 400, "Email not verified");
+    if (!user.isVerified)
+      return responseHandler.error(res, 400, "Email not verified");
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const accessToken = tokenHelper.generateAccessToken(user);
+    const refreshToken = tokenHelper.generateRefreshToken(user);
 
     const isProd = env.NODE_ENV === "production";
 
@@ -162,7 +159,8 @@ export const resetPassword: RequestHandler = async (req, res) => {
       return responseHandler.error(res, 400, "Enter a valid email");
 
     const user = await UserModel.findOne({ email });
-    if (!user) return responseHandler.error(res, 400, "Email is not registered");
+    if (!user)
+      return responseHandler.error(res, 400, "Email is not registered");
 
     if (
       user.resetPassLinkExpires &&
@@ -175,40 +173,57 @@ export const resetPassword: RequestHandler = async (req, res) => {
       );
     }
 
-    const resetPassToken = generateResentPassToken(user);
+    const { resetToken, resetTokenHash } = tokenHelper.generateResetPassToken();
 
-    const resetPassLink = `${env.CLIENT_URL}/resetpass?sec=${resetPassToken}`;
+    const resetPassLink = `${env.CLIENT_URL}/auth/resetpass?sec=${resetToken}`;
 
+    user.resetPassToken = resetTokenHash;
     user.resetPassLinkExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    sendMail(email, resetPassLink, "Reset Password Link", resetPassTemplate);
+    sendMail(email, resetPassLink, "Reset Password", resetPassTemplate);
 
-    return responseHandler.success(res, 200, "Password reset link sent to your email");
+    return responseHandler.success(
+      res,
+      200,
+      "Password reset link sent to your email"
+    );
   } catch (error) {
     return responseHandler.error(res, 500, "Internal server error", error);
   }
 };
 
-
-export const resetPasswordChange : RequestHandler = async (req , res )=>{
+export const resetPasswordChange: RequestHandler = async (req, res) => {
   try {
-    const {token} = req.params
-    const {newPassword} = req.body
-    
-    if(!token) return responseHandler.error(res, 400, "Token required")
-    const decoded = await verifyToken(token)
-    if(!decoded) return responseHandler.error(res, 400, "Invalid Request")
-    if(!newPassword) return responseHandler.error(res, 400, "")
-    
-    const user = await UserModel.findOne({email:decoded.email})
-    if(!user) return responseHandler.error(res, 400, "Invalid Request")
-    
-    user.password = newPassword
-    user.save()
+    const { token } = req.params;
+    const { newPassword } = req.body;
 
-    return responseHandler.success(res, 200, "User password updated successfully")
+    if (!token || Array.isArray(token))
+      return responseHandler.error(res, 400, "Token required");
+
+    const decoded = tokenHelper.verifyResetPassToken(token);
+    if (!decoded) return responseHandler.error(res, 400, "Invalid Request");
+
+    if (!newPassword)
+      return responseHandler.error(res, 400, "New Password required");
+
+    const user = await UserModel.findOne({
+      resetPassToken: decoded,
+      resetPassLinkExpires: { $gt: new Date() },
+    });
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
+
+    user.password = newPassword;
+    user.resetPassToken = null;
+    user.resetPassLinkExpires = null;
+    user.save();
+
+    return responseHandler.success(
+      res,
+      200,
+      "User password updated successfully"
+    );
   } catch (error) {
-    responseHandler.error(res, 500, "Internal server error", error)
+    responseHandler.error(res, 500, "Internal server error", error);
   }
-}
+};

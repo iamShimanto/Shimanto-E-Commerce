@@ -17,6 +17,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+package-lock.json
 
 # coverage
 coverage/

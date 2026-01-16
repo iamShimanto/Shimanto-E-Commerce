@@ -12,7 +12,8 @@ interface user {
   isVerified: boolean;
   otp: number | null;
   otpExpires: Date;
-  resetPassLinkExpires: Date;
+  resetPassLinkExpires: Date | null;
+  resetPassToken: string | null;
   comparePassword(pass: string): Promise<boolean>;
 }
 
@@ -52,6 +53,9 @@ const userSchema = new Schema<user>(
     },
     otpExpires: {
       type: Date,
+    },
+    resetPassToken: {
+      type: String,
     },
     resetPassLinkExpires: {
       type: Date,

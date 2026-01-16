@@ -18,7 +18,7 @@ export const sendMail = async (
   emailTemplate: any
 ) => {
   await transporter.sendMail({
-    from: `Email Verification ${env.EMAIL_USER}`,
+    from: `${subject} ${env.EMAIL_USER}`,
     to: email,
     subject: subject,
     html: emailTemplate({ code: otp, appName: "Shimanto" }),
