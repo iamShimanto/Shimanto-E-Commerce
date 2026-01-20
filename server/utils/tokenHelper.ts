@@ -9,7 +9,7 @@ interface jwtUserPayload {
   role: string;
 }
 
-export const generateAccessToken = (user: jwtUserPayload) => {
+export const generateAccessToken = (user: jwtUserPayload) : string => {
   return jwt.sign(
     {
       _id: user._id,
@@ -23,7 +23,7 @@ export const generateAccessToken = (user: jwtUserPayload) => {
   );
 };
 
-export const generateRefreshToken = (user: jwtUserPayload) => {
+export const generateRefreshToken = (user: jwtUserPayload) : string => {
   return jwt.sign(
     {
       _id: user._id,
