@@ -12,12 +12,12 @@ export const authMiddleWare: RequestHandler = (req, res, next) => {
     }
 
     const decoded = jwt.verify(accessToken, env.JWT_SECRET);
-    if (!decoded) return responseHandler.error(res, 400, "Invalid Request");
+    if (!decoded) return responseHandler.error(res, 400, "Invalid Request...");
 
     req.user = decoded;
 
     next();
   } catch (error) {
-    return responseHandler.error(res, 400, "Invalid Request");
+    return responseHandler.error(res, 400, "Invalid Request...");
   }
 };

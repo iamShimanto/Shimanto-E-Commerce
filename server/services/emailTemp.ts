@@ -1,5 +1,5 @@
 type TemplateArgs = { code: string | number; appName: string };
-export const emailTemplate = ({ code, appName }: TemplateArgs) => {
+export const emailTemplate = ({ code, appName = "Shimanto" }: TemplateArgs) => {
   const html = `<body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
         <div style="max-width:560px;margin:0 auto;padding:24px;">
           <div style="background:#ffffff;border-radius:14px;padding:28px;box-shadow:0 6px 18px rgba(17,24,39,0.08);">
@@ -73,5 +73,120 @@ export const resetPassTemplate = ({ code }: TemplateArgs) => {
     </div>
   </div>
   `;
+  return html;
+};
+
+export const successfullVerifyTemplate = ({
+  code,
+  appName = "Shimanto",
+}: TemplateArgs) => {
+  const html = `
+  <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verified</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f4f6f8;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      .header {
+        background: #22c55e;
+        color: #ffffff;
+        text-align: center;
+        padding: 24px;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .content {
+        padding: 32px;
+        color: #333333;
+        line-height: 1.6;
+      }
+      .content h2 {
+        margin-top: 0;
+        color: #111827;
+      }
+      .success-box {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        padding: 16px;
+        border-radius: 6px;
+        margin: 24px 0;
+        text-align: center;
+        font-weight: bold;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #6b7280;
+        background: #f9fafb;
+      }
+      .footer a {
+        color: #6b7280;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎉 Email Verified</h1>
+      </div>
+
+      <div class="content">
+        <h2>Hello ${code},</h2>
+
+        <p>
+          Great news! Your email address has been successfully verified.
+        </p>
+
+        <div class="success-box">
+          ✅ Your account is now fully activated
+        </div>
+
+        <p>
+          You can now access all features of your account without any
+          restrictions.
+        </p>
+
+        <p>
+          If you did not perform this action, please contact our support team
+          immediately.
+        </p>
+
+        <p>Thanks for joining us,<br /><strong>${appName}</strong></p>
+      </div>
+
+      <div class="footer">
+        <p>
+          © ${appName}. All rights reserved.
+        </p>
+        <p>
+          <a href="https://shimanto.dev">Contact Support</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+
+  `;
+
   return html;
 };

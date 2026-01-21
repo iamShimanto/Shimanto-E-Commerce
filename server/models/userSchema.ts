@@ -6,8 +6,9 @@ interface user {
   fullName: string;
   email: string;
   password: string;
-  phone: string;
+  phone: number;
   address: string;
+  avatar: string;
   role: string;
   isVerified: boolean;
   otp: number | null;
@@ -33,9 +34,12 @@ const userSchema = new Schema<user>(
       required: true,
     },
     phone: {
-      type: String,
+      type: Number,
     },
     address: {
+      type: String,
+    },
+    avatar: {
       type: String,
     },
     role: {
@@ -63,7 +67,7 @@ const userSchema = new Schema<user>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 userSchema.pre("save", async function () {

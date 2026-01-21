@@ -4,7 +4,7 @@ import { UserModel } from "../models/userSchema";
 import { sendMail } from "../services/sendMail";
 import { generateOtp } from "../utils/Generator";
 import { responseHandler } from "../utils/ResponseHandler";
-import { emailTemplate, resetPassTemplate } from "../services/emailTemp";
+import * as templates from "../services/emailTemp";
 import * as tokenHelper from "../utils/tokenHelper";
 import { env } from "../utils/envValidation";
 
@@ -36,7 +36,7 @@ export const craeteUser: RequestHandler = async (req, res) => {
       otpExpires: new Date(Date.now() + 2 * 60 * 1000),
     });
 
-    const template = emailTemplate;
+    const template = templates.emailTemplate;
 
     sendMail(email, emailOTP, "Email Verification Code", template);
     user.save();
@@ -44,7 +44,7 @@ export const craeteUser: RequestHandler = async (req, res) => {
     responseHandler.success(
       res,
       201,
-      "User Registration Successfull and Email verify code sent to your email"
+      "User Registration Successfull and Email verify code sent to your email",
     );
   } catch (error) {
     responseHandler.error(res, 500, "Internel server error", error);
@@ -73,6 +73,10 @@ export const verifyOtp: RequestHandler = async (req, res) => {
     user.isVerified = true;
     user.save();
 
+    const template = templates.successfullVerifyTemplate;
+
+    sendMail(email, user.fullName, "Email Verification Successfull", template);
+
     return responseHandler.error(res, 200, "Email verified successfully");
   } catch (error) {
     return responseHandler.error(res, 500, "Internal server error", error);
@@ -98,11 +102,11 @@ export const resendOtp: RequestHandler = async (req, res) => {
     user.otp = otp;
     user.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
     user.save();
-    sendMail(email, otp, "Email Verification Code", emailTemplate);
+    sendMail(email, otp, "Email Verification Code", templates.emailTemplate);
     return responseHandler.success(
       res,
       200,
-      "Email verification code sent successfully"
+      "Email verification code sent successfully",
     );
   } catch (error) {
     return responseHandler.error(res, 500, "Internal server error", error);
@@ -169,7 +173,7 @@ export const resetPassword: RequestHandler = async (req, res) => {
       return responseHandler.error(
         res,
         400,
-        "Password Reset link already sent to your email"
+        "Password Reset link already sent to your email",
       );
     }
 
@@ -181,12 +185,17 @@ export const resetPassword: RequestHandler = async (req, res) => {
     user.resetPassLinkExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    sendMail(email, resetPassLink, "Reset Password", resetPassTemplate);
+    sendMail(
+      email,
+      resetPassLink,
+      "Reset Password",
+      templates.resetPassTemplate,
+    );
 
     return responseHandler.success(
       res,
       200,
-      "Password reset link sent to your email"
+      "Password reset link sent to your email",
     );
   } catch (error) {
     return responseHandler.error(res, 500, "Internal server error", error);
@@ -221,8 +230,48 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
     return responseHandler.success(
       res,
       200,
-      "User password updated successfully"
+      "User password updated successfully",
     );
+  } catch (error) {
+    responseHandler.error(res, 500, "Internal server error", error);
+  }
+};
+
+export const getProfile: RequestHandler = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user._id).select(
+      "-password -otp -otpExpires -updatedAt",
+    );
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
+
+    responseHandler.success(res, 200, "User Profile", user);
+  } catch (error) {
+    responseHandler.error(res, 500, "Internal server error", error);
+  }
+};
+
+type updateField = {
+  fullName?: string;
+  password?: string;
+  phone?: number;
+  address?: string;
+};
+
+export const updateProfile: RequestHandler = async (req, res) => {
+  try {
+    const { fullName, password, phone, address } = req.body;
+    let updateField: updateField = {};
+
+    console.log(req.file);
+
+    return;
+
+    if (fullName) updateField.fullName = fullName;
+    if (password) updateField.password = password;
+    if (phone) updateField.phone = parseInt(phone);
+    if (address) updateField.address = address;
+
+    console.log(updateField);
   } catch (error) {
     responseHandler.error(res, 500, "Internal server error", error);
   }
