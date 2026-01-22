@@ -2,8 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import app from "./app";
 
-import dbConfig from "./dbConfig/index";
-import { env } from "./utils/envValidation";
+import dbConfig from "./Config/dbConfig";
+import { env } from "./Config/envConfig";
 
 dbConfig();
 

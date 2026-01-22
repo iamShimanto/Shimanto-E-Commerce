@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { env } from "../utils/envValidation";
+import { env } from "../Config/envConfig";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
@@ -15,7 +15,7 @@ export const sendMail = async (
   email: string,
   otp: number | string,
   subject: string,
-  emailTemplate: any
+  emailTemplate: any,
 ) => {
   await transporter.sendMail({
     from: `${subject} ${env.EMAIL_USER}`,
@@ -24,5 +24,3 @@ export const sendMail = async (
     html: emailTemplate({ code: otp, appName: "Shimanto" }),
   });
 };
-
-

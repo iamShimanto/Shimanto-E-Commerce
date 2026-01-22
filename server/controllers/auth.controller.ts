@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import { type RequestHandler } from "express";
 import { isValidEmail } from "../utils/validation";
 import { UserModel } from "../models/userSchema";
 import { sendMail } from "../services/sendMail";
@@ -6,7 +6,8 @@ import { generateOtp } from "../utils/Generator";
 import { responseHandler } from "../utils/ResponseHandler";
 import * as templates from "../services/emailTemp";
 import * as tokenHelper from "../utils/tokenHelper";
-import { env } from "../utils/envValidation";
+import { env } from "../Config/envConfig";
+import * as cloudinaryService from "../services/CloudinaryServices";
 
 export const craeteUser: RequestHandler = async (req, res) => {
   try {
@@ -250,28 +251,71 @@ export const getProfile: RequestHandler = async (req, res) => {
   }
 };
 
-type updateField = {
-  fullName?: string;
-  password?: string;
-  phone?: number;
-  address?: string;
-};
-
 export const updateProfile: RequestHandler = async (req, res) => {
   try {
-    const { fullName, password, phone, address } = req.body;
-    let updateField: updateField = {};
+    const { fullName, phone, address } = req.body;
+    const avatar = req.file;
 
-    console.log(req.file);
+    const user = await UserModel.findById(req.user._id).select(
+      "-password -otp -otpExpires -resetPassToken -resetPassLinkExpires",
+    );
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
 
-    return;
+    if (avatar) {
+      const publicId = user?.avatar?.split("/").pop()?.split(".")[0];
+      if (publicId) {
+        cloudinaryService.destroyFromCloudinary(`avatar/${publicId}`);
+      }
 
-    if (fullName) updateField.fullName = fullName;
-    if (password) updateField.password = password;
-    if (phone) updateField.phone = parseInt(phone);
-    if (address) updateField.address = address;
+      const imageRes = await cloudinaryService.uploadToCloudinary(
+        avatar,
+        "avatar",
+      );
+      if (user) {
+        user.avatar = imageRes.secure_url;
+      }
+    }
+    if (user && fullName) user.fullName = fullName;
+    if (user && phone) user.phone = phone;
+    if (user && address) user.address = address;
+    user.save();
 
-    console.log(updateField);
+    return responseHandler.success(
+      res,
+      200,
+      "User Profile Updated Successfull",
+    );
+  } catch (error) {
+    responseHandler.error(res, 500, "Internal server error", error);
+  }
+};
+
+export const refreshToken: RequestHandler = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.jwt_refresh || req.headers.authorization;
+    if (!refreshToken)
+      return responseHandler.error(res, 400, "Missing Refresh token");
+
+    const decoded = tokenHelper.verifyToken(refreshToken);
+    if (!decoded) return responseHandler.error(res, 400, "Invalid Token");
+
+    const user = await UserModel.findOne({
+      _id: decoded._id,
+      email: decoded.email,
+    });
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
+
+    const accessToken = tokenHelper.generateAccessToken(decoded);
+
+    const isProd = env.NODE_ENV === "production";
+
+    res
+      .cookie("jwt_access", accessToken, {
+        httpOnly: isProd,
+        secure: isProd,
+        maxAge: 600000,
+      })
+      .send({ success: true });
   } catch (error) {
     responseHandler.error(res, 500, "Internal server error", error);
   }

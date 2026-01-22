@@ -1,7 +1,7 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { env } from "./envValidation";
+import { env } from "../Config/envConfig";
 import { Types } from "mongoose";
-import crypto from "crypto"
+import crypto from "crypto";
 
 interface jwtUserPayload {
   _id: Types.ObjectId;
@@ -9,7 +9,7 @@ interface jwtUserPayload {
   role: string;
 }
 
-export const generateAccessToken = (user: jwtUserPayload) : string => {
+export const generateAccessToken = (user: JwtPayload): string => {
   return jwt.sign(
     {
       _id: user._id,
@@ -19,11 +19,11 @@ export const generateAccessToken = (user: jwtUserPayload) : string => {
     env.JWT_SECRET,
     {
       expiresIn: "10m",
-    }
+    },
   );
 };
 
-export const generateRefreshToken = (user: jwtUserPayload) : string => {
+export const generateRefreshToken = (user: jwtUserPayload): string => {
   return jwt.sign(
     {
       _id: user._id,
@@ -33,23 +33,32 @@ export const generateRefreshToken = (user: jwtUserPayload) : string => {
     env.JWT_SECRET,
     {
       expiresIn: "15d",
-    }
+    },
   );
 };
 
-export const generateResetPassToken = () : {resetToken: string, resetTokenHash: string} => {
+export const generateResetPassToken = (): {
+  resetToken: string;
+  resetTokenHash: string;
+} => {
   const resetToken = crypto.randomBytes(16).toString("hex");
 
-  const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+  const resetTokenHash = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
 
-  return {resetToken, resetTokenHash}
-}
+  return { resetToken, resetTokenHash };
+};
 
-export const verifyResetPassToken = (token: string) : string => {
-  const resetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+export const verifyResetPassToken = (token: string): string => {
+  const resetTokenHash = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
 
   return resetTokenHash;
-}
+};
 
 export const verifyToken = (token: string): JwtPayload => {
   const decoded = jwt.verify(token, env.JWT_SECRET);

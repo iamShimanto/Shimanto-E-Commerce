@@ -13,6 +13,7 @@ router.post("/login", auth.logInUser);
 router.post("/resetpassword", auth.resetPassword);
 router.post("/resetpasswordchange/:token", auth.resetPasswordChange);
 router.get("/profile", authMiddleWare, auth.getProfile);
+router.post("/refreshtoken", auth.refreshToken)
 router.put(
   "/profile",
   authMiddleWare,

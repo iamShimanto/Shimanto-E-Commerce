@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { responseHandler } from "../utils/ResponseHandler";
 import jwt from "jsonwebtoken";
-import { env } from "../utils/envValidation";
+import { env } from "../Config/envConfig";
 
 export const authMiddleWare: RequestHandler = (req, res, next) => {
   try {
