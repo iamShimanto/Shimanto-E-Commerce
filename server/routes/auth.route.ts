@@ -2,23 +2,30 @@ import { Router } from "express";
 import * as auth from "../controllers/auth.controller";
 import { authMiddleWare } from "../middleware/auth.middleware";
 import multer from "multer";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const upload = multer();
 const router = Router();
 
-router.post("/register", auth.craeteUser);
-router.post("/verifyotp", auth.verifyOtp);
-router.post("/resendotp", auth.resendOtp);
-router.post("/login", auth.logInUser);
-router.post("/resetpassword", auth.resetPassword);
-router.post("/resetpasswordchange/:token", auth.resetPasswordChange);
-router.get("/profile", authMiddleWare, auth.getProfile);
-router.post("/refreshtoken", auth.refreshToken)
+router.post("/register", asyncHandler(auth.craeteUser));
+router.post("/verifyotp", asyncHandler(auth.verifyOtp));
+router.post("/resendotp", asyncHandler(auth.resendOtp));
+router.post("/login", asyncHandler(auth.logInUser));
+router.post("/resetpassword", asyncHandler(auth.resetPassword));
+router.post(
+  "/resetpasswordchange/:token",
+  asyncHandler(auth.resetPasswordChange),
+);
+
+router.get("/profile", authMiddleWare, asyncHandler(auth.getProfile));
+
+router.post("/refreshtoken", asyncHandler(auth.refreshToken));
+
 router.put(
   "/profile",
   authMiddleWare,
   upload.single("avatar"),
-  auth.updateProfile,
+  asyncHandler(auth.updateProfile),
 );
 
 export default router;
