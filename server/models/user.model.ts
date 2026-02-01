@@ -1,7 +1,7 @@
 import { model, Schema, Types, type InferSchemaType } from "mongoose";
 import bcrypt from "bcrypt";
 
-interface user {
+interface IUser {
   _id: Types.ObjectId;
   fullName: string;
   email: string;
@@ -18,7 +18,7 @@ interface user {
   comparePassword(pass: string): Promise<boolean>;
 }
 
-const userSchema = new Schema<user>(
+const userSchema = new Schema<IUser>(
   {
     fullName: {
       type: String,
@@ -82,4 +82,4 @@ userSchema.methods.comparePassword = function (pass: string): Promise<boolean> {
   return bcrypt.compare(pass, this.password);
 };
 
-export const UserModel = model<user>("User", userSchema);
+export const UserModel = model<IUser>("User", userSchema);

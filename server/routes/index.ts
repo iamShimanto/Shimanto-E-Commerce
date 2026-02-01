@@ -2,6 +2,7 @@ import { Router } from "express";
 const router = Router();
 import authRoute from "./auth.route";
 import categoryRoute from "./category.route";
+import productRoute from "./product.route"
 
 router.get("/", (req, res) => {
   res.send("Server is running");
@@ -9,6 +10,7 @@ router.get("/", (req, res) => {
 
 router.use("/api/auth", authRoute);
 router.use("/api/category", categoryRoute);
+router.use("/api/product", productRoute)
 
 router.use((req, res) => {
   res.status(404).send({ message: "Api enpoint not found" });
