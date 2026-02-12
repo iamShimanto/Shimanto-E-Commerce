@@ -15,6 +15,7 @@ export interface IProduct {
   _id?: Types.ObjectId;
 
   title: string;
+  slug: string;
   description: string;
   category: Types.ObjectId;
 
@@ -40,6 +41,13 @@ const productSchema = new Schema<IProduct>(
       required: true,
       trim: true,
     },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
+    },
     description: {
       type: String,
       required: true,
@@ -62,34 +70,33 @@ const productSchema = new Schema<IProduct>(
         sku: {
           type: String,
           required: true,
-          unique: true,
         },
-        attribute: {
-          color: {
-            type: String,
-            required: true,
-          },
-          sizes: {
-            type: String,
-            required: true,
-            enum: ["s", "m", "l", "xl", "2xl", "3xl"],
-          },
-          stock: {
-            type: Number,
-            required: true,
-          },
+        color: {
+          type: String,
+          required: true,
+        },
+        sizes: {
+          type: String,
+          required: true,
+          enum: ["s", "m", "l", "xl", "2xl", "3xl"],
+        },
+        stock: {
+          type: Number,
+          required: true,
         },
       },
     ],
     tags: {
-      type: Array,
+      type: [String],
+      default: [],
     },
     thumbnail: {
       type: String,
       required: true,
     },
     images: {
-      type: Array,
+      type: [String],
+      default: [],
     },
     isActive: {
       type: Boolean,
