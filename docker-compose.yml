@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: ./server
+    container_name: server
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
