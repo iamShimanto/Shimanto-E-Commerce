@@ -9,6 +9,7 @@ import * as cloudinaryService from "../services/CloudinaryServices";
 import { ApiError } from "../utils/ApiError";
 import { UserModel } from "../models/user.model";
 import { successResponse } from "../utils/successResponse";
+import redis from "../Config/redis";
 
 export const craeteUser: RequestHandler = async (req, res) => {
   const { fullName, email, password, phone, address } = req.body;
@@ -30,9 +31,11 @@ export const craeteUser: RequestHandler = async (req, res) => {
     password,
     phone,
     address,
-    otp: emailOTP,
-    otpExpires: new Date(Date.now() + 2 * 60 * 1000),
+    isVerified: false,
   });
+
+  const otpKey = `otp:email:${email.toLowerCase()}`;
+  await redis.set(otpKey, emailOTP, "EX", 120);
 
   const template = templates.emailTemplate;
 
@@ -51,27 +54,19 @@ export const verifyOtp: RequestHandler = async (req, res) => {
 
   if (!email || !otp) throw new ApiError(400, "Invalid request");
 
-  const user = await UserModel.findOne({
-    email,
-    otp: Number(otp),
-    otpExpires: { $gt: new Date() },
-    isVerified: false,
-  });
+  const otpKey = `otp:email:${email.toLowerCase()}`;
+  const savedOtp = await redis.get(otpKey);
 
-  if (!user) throw new ApiError(400, "Invalid Request");
+  if (!savedOtp) throw new ApiError(400, "OTP Expired or invalid");
+  if (savedOtp !== String(otp)) throw new ApiError(400, "OTP is not correct");
 
-  user.otp = null;
-  user.isVerified = true;
-  await user.save();
+  await UserModel.updateOne({ email }, { $set: { isVerified: true } });
 
   const template = templates.successfullVerifyTemplate;
 
-  await sendMail(
-    email,
-    user.fullName,
-    "Email Verification Successfull",
-    template,
-  );
+  await redis.del(otpKey);
+
+  await sendMail(email, "Guest", "Email Verification Successfull", template);
 
   return successResponse(res, "Email verified successfully", 200);
 };
@@ -82,19 +77,23 @@ export const resendOtp: RequestHandler = async (req, res) => {
   if (!email || !isValidEmail(email))
     throw new ApiError(400, "Invalid Request");
 
-  const user = await UserModel.findOne({
-    email,
-    isVerified: false,
-    otpExpires: { $lt: new Date() },
-  });
+  const user = await UserModel.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+  if (user.isVerified) throw new ApiError(400, "Email already verified");
 
-  if (!user) throw new ApiError(400, "Invalid Request");
+  const otpKey = `otp:email:${email.toLowerCase()}`;
+  const coolDownKey = `otp:cooldown:${email.toLowerCase()}`;
 
+  const onCoolDown = await redis.get(coolDownKey);
+  if (onCoolDown) {
+    throw new ApiError(429, "Please wait 30 seconds before requesting again");
+  }
   const otp = generateOtp();
-  user.otp = otp;
-  user.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
 
-  await user.save();
+  await redis.set(otpKey, String(otp), "EX", 120);
+
+  await redis.set(coolDownKey, "1", "EX", 30);
+
   await sendMail(
     email,
     otp,
