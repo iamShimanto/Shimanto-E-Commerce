@@ -19,6 +19,6 @@ router.post(
   asyncHandler(product.createProduct),
 );
 
-router.get("/products", asyncHandler(product.getAllProducts));
+router.get("/all", asyncHandler(product.getAllProducts));
 
 export default router;

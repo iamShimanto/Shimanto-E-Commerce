@@ -100,7 +100,7 @@ const productSchema = new Schema<IProduct>(
     },
     isActive: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {
