@@ -4,6 +4,8 @@ import { uploadToCloudinary } from "../services/CloudinaryServices";
 import { successResponse } from "../utils/successResponse";
 import { CategoryModel } from "../models/category.model";
 import { productModel } from "../models/product.model";
+import slugify from "slugify";
+import { generateUniqueSlug } from "../utils/generateSlug";
 
 type MulterFieldFiles = {
   thumbnail?: Express.Multer.File[];
@@ -13,24 +15,13 @@ type MulterFieldFiles = {
 const product_sizes_enum = ["s", "m", "l", "xl", "2xl", "3xl"];
 
 export const createProduct: RequestHandler = async (req, res) => {
-  const {
-    title,
-    slug,
-    description,
-    category,
-    price,
-    variants,
-    tags,
-    isActive,
-  } = req.body;
+  const { title, description, category, price, variants, tags, isActive } =
+    req.body;
   const files = req.files as MulterFieldFiles | undefined;
   if (!title) throw new ApiError(400, "Product title is required");
   if (!description) throw new ApiError(400, "Product Description is required");
   if (!category) throw new ApiError(400, "Product Category is required");
   if (!price) throw new ApiError(400, "Product Price is required");
-
-  const isSlugExist = await productModel.findOne({ slug: slug.toLowerCase() });
-  if (isSlugExist) throw new ApiError(400, "Slug is already exist");
 
   const isCategoryExist = await CategoryModel.findById(category);
   if (!isCategoryExist) throw new ApiError(400, "Enter a valid Category");
@@ -73,9 +64,11 @@ export const createProduct: RequestHandler = async (req, res) => {
         )
       : [];
 
+  const slug = await generateUniqueSlug(productModel, title);
+
   const newProduct = new productModel({
     title,
-    slug: slug.toLowerCase(),
+    slug,
     description,
     category,
     price,
@@ -88,4 +81,67 @@ export const createProduct: RequestHandler = async (req, res) => {
   await newProduct.save();
 
   successResponse(res, "Product Created Successfully", 201, newProduct);
+};
+
+export const getAllProducts: RequestHandler = async (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const category = req.query.category as string;
+  const search = req.query.search as string;
+
+  const skip = (page - 1) * limit;
+
+  const pipeline: any[] = [
+    { $match: { isActive: true } },
+
+    {
+      $lookup: {
+        from: "categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+  ];
+
+  if (category) {
+    pipeline.push({
+      $match: { "category.slug": category },
+    });
+  }
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        title: { $regex: search, $options: "i" },
+      },
+    });
+  }
+
+
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+  );
+
+  const products = await productModel.aggregate(pipeline);
+
+  const countPipeline = pipeline.slice(0, -3);
+  countPipeline.push({ $count: "total" });
+
+  const totalResult = await productModel.aggregate(countPipeline);
+  const total = totalResult[0]?.total || 0;
+
+  return res.status(200).json({
+    success: true,
+    products,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 };

@@ -3,7 +3,7 @@ import { authMiddleWare } from "../middleware/auth.middleware";
 import { roleChecker } from "../middleware/roleChecker.middleware";
 import multer from "multer";
 import { asyncHandler } from "../utils/asyncHandler";
-import * as product from "../controllers/product.controlloer"
+import * as product from "../controllers/product.controlloer";
 const upload = multer();
 
 const router = Router();
@@ -16,7 +16,9 @@ router.post(
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 6 },
   ]),
-  asyncHandler(product.createProduct)
+  asyncHandler(product.createProduct),
 );
+
+router.get("/products", asyncHandler(product.getAllProducts));
 
 export default router;

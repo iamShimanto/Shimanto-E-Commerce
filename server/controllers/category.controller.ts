@@ -3,6 +3,7 @@ import { CategoryModel } from "../models/category.model";
 import * as cloudinaryService from "../services/CloudinaryServices";
 import { ApiError } from "../utils/ApiError";
 import { successResponse } from "../utils/successResponse";
+import { generateUniqueSlug } from "../utils/generateSlug";
 
 export const create: RequestHandler = async (req, res) => {
   const { name, description } = req.body;
@@ -18,8 +19,11 @@ export const create: RequestHandler = async (req, res) => {
     "category",
   );
 
+  const slug = await generateUniqueSlug(CategoryModel, name);
+
   const category = new CategoryModel({
     name,
+    slug,
     description,
     thumbnail: imageRes.secure_url,
   });
