@@ -3,11 +3,13 @@ const app = express();
 import routes from "./routes/index";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import morgan from "morgan";
 import { env } from "./Config/envConfig";
 import { errorHandler } from "./middleware/errorHandler";
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(morgan("combined"));
 app.use(
   cors({
     origin: [env.CLIENT_URL],
