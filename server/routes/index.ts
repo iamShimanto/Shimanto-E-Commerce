@@ -8,9 +8,9 @@ router.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-router.use("/api/auth", authRoute);
-router.use("/api/category", categoryRoute);
-router.use("/api/product", productRoute)
+router.use("/api/v1/auth", authRoute);
+router.use("/api/v1/category", categoryRoute);
+router.use("/api/v1/product", productRoute)
 
 router.use((req, res) => {
   res.status(404).send({ message: "Api enpoint not found" });

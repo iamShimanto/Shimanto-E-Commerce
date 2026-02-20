@@ -2,6 +2,7 @@ import { model, Schema } from "mongoose";
 
 interface ICategory {
   name: string;
+  slug: string;
   thumbnail: string;
   description?: string;
   isActive: boolean;
@@ -9,6 +10,12 @@ interface ICategory {
 
 const categorySchema = new Schema<ICategory>({
   name: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  slug: {
     type: String,
     required: true,
     unique: true,
