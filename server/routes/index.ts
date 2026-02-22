@@ -2,7 +2,10 @@ import { Router } from "express";
 const router = Router();
 import authRoute from "./auth.route";
 import categoryRoute from "./category.route";
-import productRoute from "./product.route"
+import productRoute from "./product.route";
+import { rateLimit } from "../utils/rateLimit";
+
+router.use(rateLimit({ limit: 100, windowSec: 60, keyPrefix: "rl:api" }));
 
 router.get("/", (req, res) => {
   res.send("Server is running");
@@ -10,7 +13,7 @@ router.get("/", (req, res) => {
 
 router.use("/api/v1/auth", authRoute);
 router.use("/api/v1/category", categoryRoute);
-router.use("/api/v1/product", productRoute)
+router.use("/api/v1/product", productRoute);
 
 router.use((req, res) => {
   res.status(404).send({ message: "Api enpoint not found" });

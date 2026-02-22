@@ -20,5 +20,6 @@ router.post(
 );
 
 router.get("/all", asyncHandler(product.getAllProducts));
+router.get("/get-single-product/:slug", asyncHandler(product.getSingleProduct))
 
 export default router;
