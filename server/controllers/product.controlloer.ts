@@ -4,8 +4,8 @@ import { uploadToCloudinary } from "../services/CloudinaryServices";
 import { successResponse } from "../utils/successResponse";
 import { CategoryModel } from "../models/category.model";
 import { productModel } from "../models/product.model";
-import slugify from "slugify";
 import { generateUniqueSlug } from "../utils/generateSlug";
+import { getCache, setCache } from "../utils/redisCache";
 
 type MulterFieldFiles = {
   thumbnail?: Express.Multer.File[];
@@ -88,8 +88,14 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const category = req.query.category as string;
   const search = req.query.search as string;
-
   const skip = (page - 1) * limit;
+
+  const cacheKey = `products:list:v1:page=${page}:limit=${limit}:cat=${category || "all"}:q=${search || "none"}`;
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
 
   const pipeline: any[] = [
     { $match: { isActive: true } },
@@ -119,7 +125,6 @@ export const getAllProducts: RequestHandler = async (req, res) => {
     });
   }
 
-
   pipeline.push(
     { $sort: { createdAt: -1 } },
     { $skip: skip },
@@ -134,7 +139,7 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   const totalResult = await productModel.aggregate(countPipeline);
   const total = totalResult[0]?.total || 0;
 
-  return res.status(200).json({
+  const response = {
     success: true,
     products,
     pagination: {
@@ -143,5 +148,25 @@ export const getAllProducts: RequestHandler = async (req, res) => {
       limit,
       totalPages: Math.ceil(total / limit),
     },
-  });
+  };
+
+  await setCache(cacheKey, response, 120);
+
+  return res.status(200).json(response);
+};
+
+export const getSingleProduct: RequestHandler = async (req, res) => {
+  const { slug } = req.params;
+  const cacheKey = `product:slug:${slug}`;
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return successResponse(res, "Product Found", 200, cached);
+  }
+
+  const product = await productModel.findOne({ slug }).lean();
+  if (!product) throw new ApiError(404, "Product Not Found With this Slug");
+
+  await setCache(cacheKey, product, 300);
+
+  return successResponse(res, "Product Found", 200, product);
 };

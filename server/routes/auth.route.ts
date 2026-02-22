@@ -3,17 +3,39 @@ import * as auth from "../controllers/auth.controller";
 import { authMiddleWare } from "../middleware/auth.middleware";
 import multer from "multer";
 import { asyncHandler } from "../utils/asyncHandler";
+import { rateLimit } from "../utils/rateLimit";
 
 const upload = multer();
 const router = Router();
 
-router.post("/register", asyncHandler(auth.craeteUser));
-router.post("/verifyotp", asyncHandler(auth.verifyOtp));
-router.post("/resendotp", asyncHandler(auth.resendOtp));
-router.post("/login", asyncHandler(auth.logInUser));
-router.post("/resetpassword", asyncHandler(auth.resetPassword));
+router.post(
+  "/register",
+  rateLimit({ limit: 10, windowSec: 300, keyPrefix: "rl:register" }),
+  asyncHandler(auth.craeteUser),
+);
+router.post(
+  "/verifyotp",
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  asyncHandler(auth.verifyOtp),
+);
+router.post(
+  "/resendotp",
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  asyncHandler(auth.resendOtp),
+);
+router.post(
+  "/login",
+  rateLimit({ limit: 10, windowSec: 300, keyPrefix: "rl:login" }),
+  asyncHandler(auth.logInUser),
+);
+router.post(
+  "/resetpassword",
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  asyncHandler(auth.resetPassword),
+);
 router.post(
   "/resetpasswordchange/:token",
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
   asyncHandler(auth.resetPasswordChange),
 );
 
