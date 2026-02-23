@@ -11,8 +11,6 @@ interface IUser {
   avatar: string;
   role: string;
   isVerified: boolean;
-  resetPassLinkExpires: Date | null;
-  resetPassToken: string | null;
   comparePassword(pass: string): Promise<boolean>;
 }
 
@@ -48,12 +46,6 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
-    },
-    resetPassToken: {
-      type: String,
-    },
-    resetPassLinkExpires: {
-      type: Date,
     },
   },
   {
