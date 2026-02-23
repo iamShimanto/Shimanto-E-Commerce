@@ -10,6 +10,7 @@ import { ApiError } from "../utils/ApiError";
 import { UserModel } from "../models/user.model";
 import { successResponse } from "../utils/successResponse";
 import redis from "../Config/redis";
+import { delCache, getCache, setCache } from "../utils/redisCache";
 
 export const craeteUser: RequestHandler = async (req, res) => {
   const { fullName, email, password, phone, address } = req.body;
@@ -148,22 +149,32 @@ export const resetPassword: RequestHandler = async (req, res) => {
   if (!isValidEmail(email)) throw new ApiError(400, "Enter a valid email");
 
   const user = await UserModel.findOne({ email });
-  if (!user) throw new ApiError(400, "Email is not registered");
+  if (!user) {
+    return successResponse(
+      res,
+      "If this email is registered, a reset link has been sent.",
+      200,
+    );
+  }
 
-  if (
-    user.resetPassLinkExpires &&
-    user.resetPassLinkExpires.getTime() > Date.now()
-  ) {
-    throw new ApiError(400, "Password Reset link already sent to your email");
+  const cooldownKey = `resetpass:cooldown:${email}`;
+  const hasCooldown = await getCache(cooldownKey);
+
+  if (hasCooldown) {
+    throw new ApiError(
+      429,
+      "Password reset link already sent. Please check your email or try again later.",
+    );
   }
 
   const { resetToken, resetTokenHash } = tokenHelper.generateResetPassToken();
 
-  const resetPassLink = `${env.CLIENT_URL}/auth/resetpass?sec=${resetToken}`;
+  const RESET_TTL = 10 * 60;
 
-  user.resetPassToken = resetTokenHash;
-  user.resetPassLinkExpires = new Date(Date.now() + 10 * 60 * 1000);
-  await user.save();
+  await setCache(`resetpass:token:${resetTokenHash}`, { email }, RESET_TTL);
+  await setCache(cooldownKey, { email, createdAt: Date.now() }, RESET_TTL);
+
+  const resetPassLink = `${env.CLIENT_URL}/auth/resetpass?sec=${resetToken}`;
 
   await sendMail(
     email,
@@ -172,7 +183,11 @@ export const resetPassword: RequestHandler = async (req, res) => {
     templates.resetPassTemplate,
   );
 
-  return successResponse(res, "Password reset link sent to your email", 200);
+  return successResponse(
+    res,
+    "If this email is registered, a reset link has been sent.",
+    200,
+  );
 };
 
 export const resetPasswordChange: RequestHandler = async (req, res) => {
@@ -180,23 +195,26 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
   const { newPassword } = req.body;
 
   if (!token || Array.isArray(token)) throw new ApiError(400, "Token required");
-
-  const decoded = tokenHelper.verifyResetPassToken(token);
-  if (!decoded) throw new ApiError(400, "Invalid Request");
-
   if (!newPassword) throw new ApiError(400, "New Password required");
 
-  const user = await UserModel.findOne({
-    resetPassToken: decoded,
-    resetPassLinkExpires: { $gt: new Date() },
-  });
+  const tokenHash = tokenHelper.verifyResetPassToken(token);
+  if (!tokenHash) throw new ApiError(400, "Invalid or expired reset link");
 
-  if (!user) throw new ApiError(400, "Invalid Request");
+  const tokenKey = `resetpass:token:${tokenHash}`;
+  const cached = await getCache<{ email: string }>(tokenKey);
+
+  if (!cached || !cached.email) {
+    throw new ApiError(400, "Invalid or expired reset link");
+  }
+
+  const user = await UserModel.findOne({ email: cached.email });
+  if (!user) throw new ApiError(400, "Invalid or expired reset link");
 
   user.password = newPassword;
-  user.resetPassToken = null;
-  user.resetPassLinkExpires = null;
   await user.save();
+
+  await delCache(tokenKey);  // delete cache
+  await delCache(`resetpass:cooldown:${cached.email}`);
 
   return successResponse(res, "User password updated successfully", 200);
 };

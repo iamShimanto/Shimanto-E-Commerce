@@ -11,24 +11,65 @@ type RateLimitOptions = {
   setHeaders?: boolean;
 };
 
-const LUA_FIXED_WINDOW = `
-local key = KEYS[1]
-local window = tonumber(ARGV[1])
+const LUA_SLIDING_WINDOW = `
+local current_key  = KEYS[1]
+local previous_key = KEYS[2]
+local limit        = tonumber(ARGV[1])
+local window       = tonumber(ARGV[2])
+local now          = tonumber(ARGV[3])
 
-local count = redis.call("INCR", key)
-if count == 1 then
-  redis.call("EXPIRE", key, window)
+local current_count  = tonumber(redis.call("GET", current_key) or "0")
+local previous_count = tonumber(redis.call("GET", previous_key) or "0")
+
+-- কত সময় current window এ পার হয়েছে
+local current_window_start = math.floor(now / window) * window
+local elapsed = now - current_window_start
+local weight  = math.max(0, 1 - (elapsed / window))
+
+-- Weighted estimate: আগের window এর ভগ্নাংশ + বর্তমান count
+local estimated = math.floor(previous_count * weight) + current_count
+
+if estimated >= limit then
+  local ttl = redis.call("TTL", current_key)
+  if ttl < 0 then ttl = window end
+  return { 1, estimated, ttl }
 end
 
-local ttl = redis.call("TTL", key)
-return { count, ttl }
+-- Request allow → increment current window
+redis.call("INCR", current_key)
+redis.call("EXPIRE", current_key, window * 2)
+
+local ttl = redis.call("TTL", current_key)
+if ttl < 0 then ttl = window end
+
+return { 0, estimated + 1, ttl }
 `;
 
 function getClientIp(req: Request): string {
-  const xf = (req.headers["x-forwarded-for"] as string | undefined)
-    ?.split(",")[0]
-    ?.trim();
-  return xf || req.ip || (req.socket.remoteAddress ?? "unknown");
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function getRouteKey(req: Request): string {
+  if (req.route?.path) {
+    return `${req.baseUrl}${req.route.path}`;
+  }
+  return `${req.baseUrl}${req.path}`;
+}
+
+function getWindowKeys(
+  prefix: string,
+  route: string,
+  id: string,
+  windowSec: number,
+): { currentKey: string; previousKey: string } {
+  const now = Math.floor(Date.now() / 1000);
+  const currentWindow = Math.floor(now / windowSec);
+  const previousWindow = currentWindow - 1;
+
+  return {
+    currentKey: `${prefix}:${route}:${id}:${currentWindow}`,
+    previousKey: `${prefix}:${route}:${id}:${previousWindow}`,
+  };
 }
 
 export function rateLimit(options: RateLimitOptions): RequestHandler {
@@ -45,19 +86,29 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = keyGenerator ? keyGenerator(req) : getClientIp(req);
-      const routePart = req.baseUrl + req.path;
-      const key = `${keyPrefix}:${routePart}:${id}`;
+      const route = getRouteKey(req);
+      const { currentKey, previousKey } = getWindowKeys(
+        keyPrefix,
+        route,
+        id,
+        windowSec,
+      );
+
+      const now = Math.floor(Date.now() / 1000);
 
       const result = (await redis.eval(
-        LUA_FIXED_WINDOW,
-        1,
-        key,
+        LUA_SLIDING_WINDOW,
+        2, 
+        currentKey,
+        previousKey,
+        limit.toString(),
         windowSec.toString(),
-      )) as [number, number];
+        now.toString(),
+      )) as [number, number, number];
 
-      const count = result[0];
-      const ttl = result[1] < 0 ? windowSec : result[1];
-
+      const blocked = result[0] === 1;
+      const count = result[1];
+      const ttl = result[2] <= 0 ? windowSec : result[2];
       const remaining = Math.max(0, limit - count);
 
       if (setHeaders) {
@@ -70,18 +121,19 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
         res.setHeader("Retry-After", String(ttl));
       }
 
-      if (count > limit) {
-        return res.status(statusCode).json({
+      if (blocked) {
+        res.status(statusCode).json({
           success: false,
           message,
           retryAfterSec: ttl,
         });
+        return;
       }
 
-      return next();
+      next(); 
     } catch (err) {
       console.error("rateLimit error:", err);
-      return next();
+      next();
     }
   };
 }

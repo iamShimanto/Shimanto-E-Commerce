@@ -15,12 +15,12 @@ router.post(
 );
 router.post(
   "/verifyotp",
-  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:verifyotp" }),
   asyncHandler(auth.verifyOtp),
 );
 router.post(
   "/resendotp",
-  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:resendotp" }),
   asyncHandler(auth.resendOtp),
 );
 router.post(
@@ -30,12 +30,12 @@ router.post(
 );
 router.post(
   "/resetpassword",
-  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:resetpassword" }),
   asyncHandler(auth.resetPassword),
 );
 router.post(
   "/resetpasswordchange/:token",
-  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:login" }),
+  rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:resetpasschange" }),
   asyncHandler(auth.resetPasswordChange),
 );
 
