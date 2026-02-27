@@ -1,9 +1,14 @@
-### Building and running your application
+### Docker (Dev)
 
-When you're ready, start your application by running:
-`docker compose up --build`.
+From the repo root, start the development stack (bind-mount + hot reload):
+`docker compose -f docker-compose.dev.yml up --build`.
 
-Your application will be available at http://localhost:5000.
+Your API will be available at http://localhost:5000.
+
+### Docker (Production)
+
+From the repo root, start the production stack (built image, no bind-mount):
+`docker compose -f docker-compose.prod.yml up --build`.
 
 ### Deploying your application to the cloud
 
@@ -19,4 +24,5 @@ Consult Docker's [getting started](https://docs.docker.com/go/get-started-sharin
 docs for more detail on building and pushing.
 
 ### References
-* [Docker's Node.js guide](https://docs.docker.com/language/nodejs/)
+
+- [Docker's Node.js guide](https://docs.docker.com/language/nodejs/)

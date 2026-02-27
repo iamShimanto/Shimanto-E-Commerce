@@ -1,11 +1,15 @@
 import { RequestHandler } from "express";
 import { ApiError } from "../utils/ApiError";
-import { uploadToCloudinary } from "../services/CloudinaryServices";
+import {
+  destroyFromCloudinary,
+  uploadToCloudinary,
+} from "../services/CloudinaryServices";
 import { successResponse } from "../utils/successResponse";
 import { CategoryModel } from "../models/category.model";
 import { productModel } from "../models/product.model";
 import { generateUniqueSlug } from "../utils/generateSlug";
-import { getCache, setCache } from "../utils/redisCache";
+import { delCache, getCache, setCache } from "../utils/redisCache";
+import { Types } from "mongoose";
 
 type MulterFieldFiles = {
   thumbnail?: Express.Multer.File[];
@@ -15,8 +19,16 @@ type MulterFieldFiles = {
 const product_sizes_enum = ["s", "m", "l", "xl", "2xl", "3xl"];
 
 export const createProduct: RequestHandler = async (req, res) => {
-  const { title, description, category, price, variants, tags, isActive } =
-    req.body;
+  const {
+    title,
+    description,
+    category,
+    price,
+    variants,
+    tags,
+    isActive,
+    discountPercentage,
+  } = req.body;
   const files = req.files as MulterFieldFiles | undefined;
   if (!title) throw new ApiError(400, "Product title is required");
   if (!description) throw new ApiError(400, "Product Description is required");
@@ -72,6 +84,7 @@ export const createProduct: RequestHandler = async (req, res) => {
     description,
     category,
     price,
+    discountPercentage,
     variants,
     tags,
     isActive,
@@ -169,4 +182,125 @@ export const getSingleProduct: RequestHandler = async (req, res) => {
   await setCache(cacheKey, product, 300);
 
   return successResponse(res, "Product Found", 200, product);
+};
+
+export const updateProduct: RequestHandler = async (req, res) => {
+  const { slug } = req.params;
+  const existProduct = await productModel.findOne({ slug });
+  if (!existProduct) throw new ApiError(404, "Product not exist");
+  const {
+    title,
+    description,
+    category,
+    price,
+    discountPercentage,
+    variants,
+    tags,
+    isActive,
+  } = req.body;
+
+  const files = (req.files as MulterFieldFiles) || undefined;
+  const thumbnail = files?.thumbnail?.[0];
+  const images = files?.images ?? [];
+
+  if (images.length > 6) {
+    throw new ApiError(400, "Maximum 6 product images are allowed");
+  }
+
+  if (typeof title !== "undefined") {
+    if (typeof title !== "string" || title.trim().length === 0) {
+      throw new ApiError(400, "Product title must be a non-empty string");
+    }
+    existProduct.title = title;
+  }
+
+  if (typeof description !== "undefined") {
+    if (typeof description !== "string" || description.trim().length === 0) {
+      throw new ApiError(400, "Product Description must be a non-empty string");
+    }
+    existProduct.description = description;
+  }
+
+  if (typeof category !== "undefined") {
+    if (!Types.ObjectId.isValid(category)) {
+      throw new ApiError(400, "Enter a valid Category");
+    }
+    const isCategoryExist = await CategoryModel.findById(category);
+    if (!isCategoryExist) throw new ApiError(400, "Enter a valid Category");
+    existProduct.category = category;
+  }
+
+  if (typeof price !== "undefined") {
+    const priceNum = typeof price === "number" ? price : Number(price);
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      throw new ApiError(400, "Product Price must be a positive number");
+    }
+    existProduct.price = priceNum;
+  }
+
+  if (typeof discountPercentage !== "undefined") {
+    const discountNum =
+      typeof discountPercentage === "number"
+        ? discountPercentage
+        : Number(discountPercentage);
+    if (!Number.isFinite(discountNum) || discountNum < 0 || discountNum > 100) {
+      throw new ApiError(400, "discountPercentage must be between 0 and 100");
+    }
+    existProduct.discountPercentage = discountNum;
+  }
+
+  if (typeof isActive !== "undefined") {
+    const parsedIsActive =
+      typeof isActive === "boolean"
+        ? isActive
+        : isActive === "true"
+          ? true
+          : isActive === "false"
+            ? false
+            : undefined;
+
+    if (typeof parsedIsActive !== "boolean") {
+      throw new ApiError(400, "isActive must be boolean");
+    }
+    existProduct.isActive = parsedIsActive;
+  }
+  if (tags && tags.length > 0 && Array.isArray(tags)) existProduct.tags = tags;
+
+  if (Array.isArray(variants) && variants.length > 0) {
+    for (const variant of variants) {
+      if (!variant.sku) throw new ApiError(400, "Product SKU is required");
+      if (!variant.color) throw new ApiError(400, "Color is required");
+      if (!variant.sizes) throw new ApiError(400, "Size is required");
+      if (!product_sizes_enum.includes(variant.sizes))
+        throw new ApiError(400, "Enter a valid size");
+      if (!variant.stock || variant.stock < 1)
+        throw new ApiError(
+          400,
+          "Product stock required and must be more than 0",
+        );
+    }
+    const skus = variants.map((v) => v.sku);
+    if (new Set(skus).size !== skus.length)
+      throw new ApiError(400, "sku must be unique");
+  }
+
+  if (thumbnail) {
+    const publicId = existProduct?.thumbnail?.split("/").pop()?.split(".")[0];
+    if (publicId) {
+      await destroyFromCloudinary(`products/${publicId}`);
+    }
+    const imageRes = await uploadToCloudinary(thumbnail, "products");
+    existProduct.thumbnail = imageRes.secure_url;
+  }
+
+  await existProduct.save();
+  const cacheKey = `product:slug:${slug}`;
+  await delCache(cacheKey);
+
+  return successResponse(
+    res,
+    "Product Updated Successfully",
+    200,
+    existProduct,
+  );
 };

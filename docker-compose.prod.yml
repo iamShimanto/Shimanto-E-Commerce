@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    container_name: server
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:

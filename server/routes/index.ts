@@ -5,7 +5,9 @@ import categoryRoute from "./category.route";
 import productRoute from "./product.route";
 import { rateLimit } from "../utils/rateLimit";
 
-router.use(rateLimit({ limit: 1000, windowSec: 15 * 60, keyPrefix: "rl:global" }));
+router.use(
+  rateLimit({ limit: 1000, windowSec: 15 * 60, keyPrefix: "rl:global" }),
+);
 
 router.get("/", (req, res) => {
   res.send("Server is running");

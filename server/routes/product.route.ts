@@ -20,6 +20,16 @@ router.post(
 );
 
 router.get("/all", asyncHandler(product.getAllProducts));
-router.get("/get-single-product/:slug", asyncHandler(product.getSingleProduct))
+router.get("/get-single-product/:slug", asyncHandler(product.getSingleProduct));
+router.put(
+  "/update-product/:slug",
+  authMiddleWare,
+  roleChecker("admin", "stuff"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "images", maxCount: 6 },
+  ]),
+  asyncHandler(product.updateProduct),
+);
 
 export default router;
