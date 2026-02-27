@@ -4,14 +4,17 @@ services:
       context: ./server
       dockerfile: Dockerfile
       target: dev
-    container_name: server
+    container_name: server-dev
     ports:
       - "5000:5000"
     env_file:
       - ./server/.env
     environment:
+      NODE_ENV: development
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
     depends_on:
       - redis
     volumes:
@@ -21,7 +24,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: redis-dev
     ports:
       - "6380:6379"
     volumes:
