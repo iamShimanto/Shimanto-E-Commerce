@@ -8,13 +8,23 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./server/.env
+      - ./server/.env.production
     environment:
       NODE_ENV: production
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
       - redis
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      target: prod
+    container_name: admin
+    ports:
+      - "8080:80"
     restart: unless-stopped
 
   redis:
