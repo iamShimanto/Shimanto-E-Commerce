@@ -63,8 +63,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
     const { data: user } = useProfileQuery()
     const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation()
 
-    const displayName = user?.fullName || "Super Admin"
-    const displayEmail = user?.email || "admin@shimanto.com"
+    const displayName = user?.fullName || "Admin"
+    const displayEmail = user?.email || "contact@shimanto.dev"
 
     const onLogout = async () => {
         try {
@@ -77,7 +77,6 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                 "Logout failed"
             toast.error("Logout failed", message)
         } finally {
-            // Clear RTK Query cache so old profile data doesn't linger.
             dispatch(authApi.util.resetApiState())
             navigate("/login", { replace: true })
             toast.success("Logged out")
@@ -115,7 +114,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                     <div className="border-t border-(--border) px-5 py-4">
                         <div className="flex items-center gap-3">
                             <div className="grid h-9 w-9 place-items-center rounded-full bg-(--surface-2) text-sm font-bold ring-1 ring-(--border)">
-                                SA
+                                <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
                             </div>
                             <div className="min-w-0">
                                 <div className="truncate text-sm font-semibold">{displayName}</div>
@@ -208,7 +207,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                         <div className="border-t border-(--border) px-5 py-4">
                             <div className="flex items-center gap-3">
                                 <div className="grid h-9 w-9 place-items-center rounded-full bg-(--surface-2) text-sm font-bold ring-1 ring-(--border)">
-                                    SA
+                                    <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="truncate text-sm font-semibold">{displayName}</div>

@@ -14,7 +14,12 @@ app.use(cookieParser());
 app.use(morgan("combined"));
 app.use(
   cors({
-    origin: [env.CLIENT_URL, "http://localhost:5173"],
+    origin: [
+      env.CLIENT_URL1,
+      env.CLIENT_URL2,
+      env.CLIENT_URL3,
+      env.CLIENT_URL4,
+    ],
     credentials: true,
   }),
 );

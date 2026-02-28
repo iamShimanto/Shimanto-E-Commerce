@@ -16,5 +16,12 @@ router.post(
   asyncHandler(category.create),
 );
 router.get("/all", asyncHandler(category.getAllCategory));
+router.put(
+  "/update/:slug",
+  authMiddleWare,
+  roleChecker("admin", "stuff"),
+  upload.single("thumbnail"),
+  asyncHandler(category.updateCategory),
+);
 
 export default router;
