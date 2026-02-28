@@ -1,52 +1,36 @@
 import { Toaster } from "react-hot-toast"
-import ThemeToggle from "./components/ui/ThemeToggle"
-import { useToast } from "./hooks/useToast"
-import { useTheme } from "./hooks/useTheme"
+import { Navigate, Route, Routes } from "react-router"
 
-function App() {
-  const toast = useToast()
-  const { isDark, toggle } = useTheme()
+import Layout from "./components/layout/Index"
+import DashboardHome from "./pages/DashboardHome"
+import Orders from "./pages/Orders"
+import Products from "./pages/Products"
+import Categories from "./pages/Categories"
+import Customers from "./pages/Customers"
+import Cart from "./pages/Cart"
+import Settings from "./pages/Settings"
+import Login from "./pages/Login"
+
+export default function App() {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
-      <div className="min-h-dvh p-6">
-        <div className="flex items-center justify-end">
-          <ThemeToggle isDark={isDark} onToggle={toggle} />
-        </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-black/10 transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-white/90"
-            onClick={() => toast.success("Success", "Product added")}
-          >
-            Success
-          </button>
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-          <button
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/10 transition hover:bg-slate-50 dark:bg-slate-900 dark:text-white dark:ring-white/10 dark:hover:bg-slate-800"
-            onClick={() => toast.error("Oops", "Something went wrong")}
-          >
-            Error
-          </button>
+        <Route element={<Layout />}>
+          <Route index element={<DashboardHome />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="products" element={<Products />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
 
-          <button
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/10 transition hover:bg-slate-50 dark:bg-slate-900 dark:text-white dark:ring-white/10 dark:hover:bg-slate-800"
-            onClick={() => toast.info("Heads up", "New update available")}
-          >
-            Info
-          </button>
-
-          <button
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/10 transition hover:bg-slate-50 dark:bg-slate-900 dark:text-white dark:ring-white/10 dark:hover:bg-slate-800"
-            onClick={() => toast.warning("Warning", "Low stock")}
-          >
-            Warning
-          </button>
-        </div>
-      </div>
-
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   )
 }
-
-export default App

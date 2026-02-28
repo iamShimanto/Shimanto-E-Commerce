@@ -5,9 +5,17 @@ const toastStyleBase = {
   background: "transparent",
   padding: 0,
   boxShadow: "none",
+  pointerEvents: "auto",
 };
 
 export const useToast = () => {
+  const dismissNow = (id) => {
+    if (!id) return;
+    toast.dismiss(id);
+    // Ensure the toast is actually removed from state after exit animation.
+    setTimeout(() => toast.remove(id), 50);
+  };
+
   const show = (variant, title, message = "", options = {}) => {
     const defaultDuration =
       variant === "error" ? 4200 : variant === "loading" ? Infinity : 3200;
@@ -21,7 +29,7 @@ export const useToast = () => {
           title={title}
           message={message}
           duration={duration}
-          onDismiss={() => toast.dismiss(t.id)}
+          onDismiss={() => dismissNow(t.id)}
         />
       ),
       {
@@ -42,7 +50,7 @@ export const useToast = () => {
 
   const warning = (title, message = "", options = {}) => show("warning", title, message, options);
 
-  const dismiss = (id) => toast.dismiss(id);
+  const dismiss = (id) => dismissNow(id);
 
   const promise = (promiseValueOrPromise, msgs) => {
     const id = loading(msgs.loadingTitle || "Working...", msgs.loading || "");
