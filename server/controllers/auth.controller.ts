@@ -174,7 +174,7 @@ export const resetPassword: RequestHandler = async (req, res) => {
   await setCache(`resetpass:token:${resetTokenHash}`, { email }, RESET_TTL);
   await setCache(cooldownKey, { email, createdAt: Date.now() }, RESET_TTL);
 
-  const resetPassLink = `${env.CLIENT_URL}/auth/resetpass?sec=${resetToken}`;
+  const resetPassLink = `${env.CLIENT_URL1}/auth/resetpass?sec=${resetToken}`;
 
   await sendMail(
     email,

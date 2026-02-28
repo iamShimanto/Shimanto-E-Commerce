@@ -58,7 +58,7 @@ export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
 
                     <div className="hidden sm:flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface) px-3 py-2 shadow-sm">
                         <div className="grid h-8 w-8 place-items-center rounded-full bg-(--surface-2) text-xs font-extrabold ring-1 ring-(--border)">
-                            SA
+                            <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
                         </div>
                         <Link to={"/profile"} className="leading-tight">
                             <div className="text-xs font-extrabold">{user?.fullName || "Admin"}</div>
