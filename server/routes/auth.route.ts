@@ -28,6 +28,12 @@ router.post(
   rateLimit({ limit: 10, windowSec: 300, keyPrefix: "rl:login" }),
   asyncHandler(auth.logInUser),
 );
+
+router.post(
+  "/logout",
+  rateLimit({ limit: 30, windowSec: 300, keyPrefix: "rl:logout" }),
+  asyncHandler(auth.logOutUser),
+);
 router.post(
   "/resetpassword",
   rateLimit({ limit: 5, windowSec: 300, keyPrefix: "rl:resetpassword" }),

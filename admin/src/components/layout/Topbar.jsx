@@ -1,10 +1,12 @@
 import { Bell, Menu, Search } from "lucide-react"
-
 import ThemeToggle from "../ui/ThemeToggle"
 import Button from "../ui/Button"
 import { cn } from "../../lib/cn"
+import { useProfileQuery } from "../../store/auth/authApi"
+import { Link } from "react-router"
 
 export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
+    const { data: user } = useProfileQuery()
     return (
         <header className="sticky top-0 z-40 border-b border-(--border) bg-(--surface)/85 backdrop-blur-xl">
             <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
@@ -58,12 +60,12 @@ export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
                         <div className="grid h-8 w-8 place-items-center rounded-full bg-(--surface-2) text-xs font-extrabold ring-1 ring-(--border)">
                             SA
                         </div>
-                        <div className="leading-tight">
-                            <div className="text-xs font-extrabold">Super Admin</div>
+                        <Link to={"/profile"} className="leading-tight">
+                            <div className="text-xs font-extrabold">{user?.fullName || "Admin"}</div>
                             <div className="text-[11px] font-semibold text-(--text-muted)">
                                 Online
                             </div>
-                        </div>
+                        </Link>
                     </div>
                 </div>
             </div>
