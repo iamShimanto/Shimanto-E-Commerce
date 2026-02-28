@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    height: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    background: theme(colors.slate.50);
+    color: theme(colors.slate.900);
+  }
+
+  .dark body {
+    background: theme(colors.slate.950);
+    color: theme(colors.white);
+  }
+}
+
+.toast-card {
+  transform-origin: top right;
+}
+
+.toast-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    600px 140px at 20% 0%,
+    rgba(255, 255, 255, 0.22),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.toast-enter {
+  animation: toastIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.toast-exit {
+  animation: toastOut 140ms cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter,
+  .toast-exit,
+  .toast-progress {
+    animation: none !important;
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) scale(0.98);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(0.98);
+  }
+}
+
+.toast-progress {
+  transform-origin: left;
+  animation-name: toastProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.toast-card:hover .toast-progress {
+  animation-play-state: paused;
+}
+
+@keyframes toastProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
