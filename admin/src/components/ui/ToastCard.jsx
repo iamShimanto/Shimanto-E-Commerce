@@ -50,14 +50,16 @@ export default function ToastCard({
     const Icon = s.Icon;
 
     const isLoading = variant === "loading";
+    const canDismiss = typeof onDismiss === "function" && !isLoading;
     const shouldShowProgress =
         !isLoading && typeof duration === "number" && Number.isFinite(duration) && duration > 0;
 
     return (
         <div
-            className={`toast-card ${t?.visible ? "toast-enter" : "toast-exit"} group relative w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200/70 bg-white/90 text-slate-900 shadow-xl shadow-black/10 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 dark:text-white dark:shadow-black/50 dark:ring-white/10`}
+            className={`toast-card ${t?.visible ? "toast-enter" : "toast-exit"} group relative w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200/70 bg-white/90 text-slate-900 shadow-xl shadow-black/10 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 dark:text-white dark:shadow-black/50 dark:ring-white/10 ${canDismiss ? "cursor-pointer" : ""}`}
             role="status"
             aria-live={variant === "error" ? "assertive" : "polite"}
+            onClick={canDismiss ? onDismiss : undefined}
         >
             <div
                 className="absolute left-0 top-0 h-full w-1"
@@ -68,7 +70,10 @@ export default function ToastCard({
 
             <button
                 type="button"
-                onClick={onDismiss}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDismiss?.();
+                }}
                 className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-500 transition hover:bg-black/5 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-black/10 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white dark:focus:ring-white/20"
                 aria-label="Dismiss toast"
             >
@@ -88,9 +93,7 @@ export default function ToastCard({
                 </div>
 
                 <div className="min-w-0">
-                    <div className="text-sm font-semibold leading-5">
-                        {title}
-                    </div>
+                    <div className="text-sm font-semibold leading-5">{title}</div>
                     {message ? (
                         <div className="mt-0.5 text-xs font-medium leading-4 text-slate-600 dark:text-white/70">
                             {message}
