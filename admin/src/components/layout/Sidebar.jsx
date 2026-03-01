@@ -18,7 +18,7 @@ import { useNavigate } from "react-router"
 import { cn } from "../../lib/cn"
 import Button from "../ui/Button"
 import { useToast } from "../../hooks/useToast"
-import { authApi, useLogoutMutation, useProfileQuery } from "../../store/auth/authApi"
+import { authApi, useLogoutMutation, useProfileQuery } from "../../api/auth/authApi"
 
 const navItems = [
     { to: "/", label: "Dashboard", Icon: LayoutDashboard, end: true },

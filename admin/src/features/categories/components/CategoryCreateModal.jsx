@@ -8,8 +8,8 @@ import Field from "../../../components/ui/Field"
 import Input from "../../../components/ui/Input"
 import Modal from "../../../components/ui/Modal"
 import Textarea from "../../../components/ui/Textarea"
+import { useCreateCategoryMutation } from "../../../api/category/categoryApi"
 
-import { useCreateCategoryMutation } from "../../../store/category/categoryApi"
 
 function validateImage(file, toast) {
     if (!file.type?.startsWith("image/")) {

@@ -9,8 +9,8 @@ import Input from "../../../components/ui/Input"
 import Modal from "../../../components/ui/Modal"
 import Select from "../../../components/ui/Select"
 import Textarea from "../../../components/ui/Textarea"
+import { useUpdateCategoryMutation } from "../../../api/category/categoryApi"
 
-import { useUpdateCategoryMutation } from "../../../store/category/categoryApi"
 
 function validateImage(file, toast) {
     if (!file.type?.startsWith("image/")) {

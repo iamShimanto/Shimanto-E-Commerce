@@ -1,57 +1,64 @@
-import axios from "axios";
+import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-export const baseUrl = import.meta.env.VITE_API_URL;
+const baseUrl = import.meta.env.VITE_API_URL ?? "";
 
-const api = axios.create({
-  baseURL: baseUrl,
-  withCredentials: true,
-  timeout: 10000,
-});
+const DEFAULT_TIMEOUT_MS = 10000;
+
+const fetchWithTimeout = async (input, init) => {
+  if (init?.signal) return fetch(input, init);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 let refreshPromise = null;
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl,
+  credentials: "include",
+  fetchFn: fetchWithTimeout,
+});
 
-    // If there is no config, just bubble up.
-    if (!originalRequest) return Promise.reject(error);
+export const api = async (args, api, extraOptions) => {
+  let result = await rawBaseQuery(args, api, extraOptions);
 
-    const status = error.response?.status;
-    const requestUrl = originalRequest?.url || "";
-    const isRefreshCall = requestUrl.includes("/api/v1/auth/refreshtoken");
+  if (result?.error?.status !== 401) return result;
 
-    // Don't try to refresh if the refresh request itself failed.
-    if (status === 401 && isRefreshCall) {
-      return Promise.reject(error);
+  const requestUrl = typeof args === "string" ? args : args?.url;
+  const isRefreshCall = (requestUrl || "").includes(
+    "/api/v1/auth/refreshtoken",
+  );
+
+  if (isRefreshCall) return result;
+
+  try {
+    if (!refreshPromise) {
+      refreshPromise = rawBaseQuery(
+        { url: "/api/v1/auth/refreshtoken", method: "POST" },
+        api,
+        extraOptions,
+      )
+        .then((refreshResult) => !refreshResult?.error)
+        .catch(() => false)
+        .finally(() => {
+          refreshPromise = null;
+        });
     }
 
-    if (status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    const refreshed = await refreshPromise;
+    if (!refreshed) return result;
 
-      try {
-        if (!refreshPromise) {
-          refreshPromise = api
-            .post("/api/v1/auth/refreshtoken")
-            .then(() => true)
-            .catch(() => false)
-            .finally(() => {
-              refreshPromise = null;
-            });
-        }
-
-        const refreshed = await refreshPromise;
-        if (!refreshed) return Promise.reject(error);
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  },
-);
+    result = await rawBaseQuery(args, api, extraOptions);
+    return result;
+  } catch {
+    return result;
+  }
+};
 
 export default api;
