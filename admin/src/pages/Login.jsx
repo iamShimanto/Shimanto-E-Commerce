@@ -6,7 +6,7 @@ import { useToast } from "../hooks/useToast"
 import Button from "../components/ui/Button"
 import Field from "../components/ui/Field"
 import Input from "../components/ui/Input"
-import { useLoginMutation, useProfileQuery } from "../store/auth/authApi"
+import { useLoginMutation, useProfileQuery } from "../api/auth/authApi"
 
 export default function Login() {
   const navigate = useNavigate()

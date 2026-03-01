@@ -2,8 +2,8 @@ import { Bell, Menu, Search } from "lucide-react"
 import ThemeToggle from "../ui/ThemeToggle"
 import Button from "../ui/Button"
 import { cn } from "../../lib/cn"
-import { useProfileQuery } from "../../store/auth/authApi"
 import { Link } from "react-router"
+import { useProfileQuery } from "../../api/auth/authApi"
 
 export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
     const { data: user } = useProfileQuery()

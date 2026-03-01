@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router"
-import { useProfileQuery } from "../../store/auth/authApi"
+import { useProfileQuery } from "../../api/auth/authApi"
 
 export default function RequireAuth({ children }) {
     const location = useLocation()

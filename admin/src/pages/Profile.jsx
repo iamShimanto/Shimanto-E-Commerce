@@ -6,7 +6,7 @@ import Button from "../components/ui/Button"
 import Field from "../components/ui/Field"
 import Input from "../components/ui/Input"
 import Textarea from "../components/ui/Textarea"
-import { useProfileQuery, useUpdateProfileMutation } from "../store/auth/authApi"
+import { useProfileQuery, useUpdateProfileMutation } from "../api/auth/authApi"
 
 function initialsFromName(name) {
     if (!name) return "U"

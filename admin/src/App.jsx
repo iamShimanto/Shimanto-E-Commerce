@@ -1,45 +1,60 @@
+import { lazy, Suspense } from "react"
 import { Toaster } from "react-hot-toast"
 import { Navigate, Route, Routes } from "react-router"
 
-import Layout from "./components/layout/Index"
-import RequireAuth from "./components/auth/RequireAuth"
-import DashboardHome from "./pages/DashboardHome"
-import Orders from "./pages/Orders"
-import Products from "./pages/Products"
-import Categories from "./pages/Categories"
-import Customers from "./pages/Customers"
-import Cart from "./pages/Cart"
-import Settings from "./pages/Settings"
-import Login from "./pages/Login"
-import Profile from "./pages/Profile"
+const Layout = lazy(() => import("./components/layout/Index"))
+const RequireAuth = lazy(() => import("./components/auth/RequireAuth"))
+
+const DashboardHome = lazy(() => import("./pages/DashboardHome"))
+const Orders = lazy(() => import("./pages/Orders"))
+const Products = lazy(() => import("./pages/Products"))
+const Categories = lazy(() => import("./pages/Categories"))
+const Customers = lazy(() => import("./pages/Customers"))
+const Cart = lazy(() => import("./pages/Cart"))
+const Settings = lazy(() => import("./pages/Settings"))
+const Login = lazy(() => import("./pages/Login"))
+const Profile = lazy(() => import("./pages/Profile"))
+
+function RouteLoading() {
+  return (
+    <div
+      className="min-h-dvh flex items-center justify-center px-4"
+      style={{ background: "var(--bg)", color: "var(--text)" }}
+    >
+      <div className="text-sm font-semibold text-(--text-muted)">Loading…</div>
+    </div>
+  )
+}
 
 export default function App() {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
 
-      <Routes>
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        <Route
-          element={
-            <RequireAuth>
-              <Layout />
-            </RequireAuth>
-          }
-        >
-          <Route index element={<DashboardHome />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="products" element={<Products />} />
-          <Route path="categories" element={<Categories />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+          <Route
+            element={
+              <RequireAuth>
+                <Layout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<DashboardHome />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="products" element={<Products />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   )
 }

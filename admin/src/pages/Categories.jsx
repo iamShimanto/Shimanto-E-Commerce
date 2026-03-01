@@ -1,18 +1,12 @@
 import { useMemo, useState } from "react"
 import { Plus, RefreshCcw, Search } from "lucide-react"
-
 import { cn } from "../lib/cn"
-
 import Button from "../components/ui/Button"
-
-import { useGetCategoriesQuery } from "../store/category/categoryApi"
-
-import CategoryCard, {
-    CategoryCardSkeleton,
-} from "../features/categories/components/CategoryCard"
+import CategoryCard, { CategoryCardSkeleton } from "../features/categories/components/CategoryCard"
 import CategoryCreateModal from "../features/categories/components/CategoryCreateModal"
 import CategoryEditModal from "../features/categories/components/CategoryEditModal"
 import { safeText } from "../features/categories/categoryUtils"
+import { useGetCategoriesQuery } from "../api/category/categoryApi"
 
 export default function Categories() {
     const [query, setQuery] = useState("")
