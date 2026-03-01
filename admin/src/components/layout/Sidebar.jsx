@@ -4,14 +4,21 @@ import {
     Boxes,
     ClipboardList,
     LayoutDashboard,
+    LogOut,
+    User,
     Settings,
     ShoppingCart,
     Users,
     X,
 } from "lucide-react"
 
+import { useDispatch } from "react-redux"
+import { useNavigate } from "react-router"
+
 import { cn } from "../../lib/cn"
 import Button from "../ui/Button"
+import { useToast } from "../../hooks/useToast"
+import { authApi, useLogoutMutation, useProfileQuery } from "../../store/auth/authApi"
 
 const navItems = [
     { to: "/", label: "Dashboard", Icon: LayoutDashboard, end: true },
@@ -20,6 +27,7 @@ const navItems = [
     { to: "/categories", label: "Categories", Icon: BarChart3 },
     { to: "/customers", label: "Customers", Icon: Users },
     { to: "/cart", label: "Cart", Icon: ShoppingCart },
+    { to: "/profile", label: "Profile", Icon: User },
     { to: "/settings", label: "Settings", Icon: Settings },
 ]
 
@@ -48,6 +56,35 @@ function SidebarLink({ to, label, Icon: NavIcon, end, onNavigate }) {
 }
 
 export default function Sidebar({ mobileOpen, onMobileClose }) {
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
+    const toast = useToast()
+
+    const { data: user } = useProfileQuery()
+    const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation()
+
+    const displayName = user?.fullName || "Super Admin"
+    const displayEmail = user?.email || "admin@shimanto.com"
+
+    const onLogout = async () => {
+        try {
+            await triggerLogout().unwrap()
+        } catch (error) {
+            const message =
+                error?.data?.message ||
+                error?.data?.error ||
+                (typeof error === "string" ? error : null) ||
+                "Logout failed"
+            toast.error("Logout failed", message)
+        } finally {
+            // Clear RTK Query cache so old profile data doesn't linger.
+            dispatch(authApi.util.resetApiState())
+            navigate("/login", { replace: true })
+            toast.success("Logged out")
+            onMobileClose?.()
+        }
+    }
+
     return (
         <>
             {/* Desktop */}
@@ -58,8 +95,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                             <LayoutDashboard size={18} />
                         </div>
                         <div className="min-w-0">
-                            <div className="truncate text-sm font-extrabold tracking-tight">
-                                Shimanto Admin
+                            <div className="truncate text-lg font-extrabold tracking-tight">
+                                Admin
                             </div>
                             <div className="truncate text-xs font-medium text-(--text-muted)">
                                 Dashboard
@@ -81,11 +118,25 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                                 SA
                             </div>
                             <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold">Super Admin</div>
+                                <div className="truncate text-sm font-semibold">{displayName}</div>
                                 <div className="truncate text-xs font-medium text-(--text-muted)">
-                                    admin@shimanto.com
+                                    {displayEmail}
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="mt-4">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                className="w-full justify-center"
+                                onClick={onLogout}
+                                disabled={isLoggingOut}
+                            >
+                                <LogOut size={16} />
+                                {isLoggingOut ? "Logging out…" : "Logout"}
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -160,11 +211,25 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                                     SA
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="truncate text-sm font-semibold">Super Admin</div>
+                                    <div className="truncate text-sm font-semibold">{displayName}</div>
                                     <div className="truncate text-xs font-medium text-(--text-muted)">
-                                        admin@shimanto.com
+                                        {displayEmail}
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full justify-center"
+                                    onClick={onLogout}
+                                    disabled={isLoggingOut}
+                                >
+                                    <LogOut size={16} />
+                                    {isLoggingOut ? "Logging out…" : "Logout"}
+                                </Button>
                             </div>
                         </div>
                     </div>

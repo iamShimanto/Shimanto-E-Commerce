@@ -288,3 +288,23 @@ export const refreshToken: RequestHandler = async (req, res) => {
 
   return res.status(200).json({ success: true });
 };
+
+export const logOutUser: RequestHandler = async (req, res) => {
+  const isProd = env.NODE_ENV === "production";
+
+  res.cookie("jwt_access", "", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    expires: new Date(0),
+  });
+
+  res.cookie("jwt_refresh", "", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    expires: new Date(0),
+  });
+
+  return successResponse(res, "Logout Successful", 200);
+};
