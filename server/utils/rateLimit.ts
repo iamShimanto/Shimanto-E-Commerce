@@ -21,12 +21,10 @@ local now          = tonumber(ARGV[3])
 local current_count  = tonumber(redis.call("GET", current_key) or "0")
 local previous_count = tonumber(redis.call("GET", previous_key) or "0")
 
--- কত সময় current window এ পার হয়েছে
 local current_window_start = math.floor(now / window) * window
 local elapsed = now - current_window_start
 local weight  = math.max(0, 1 - (elapsed / window))
 
--- Weighted estimate: আগের window এর ভগ্নাংশ + বর্তমান count
 local estimated = math.floor(previous_count * weight) + current_count
 
 if estimated >= limit then
@@ -35,7 +33,6 @@ if estimated >= limit then
   return { 1, estimated, ttl }
 end
 
--- Request allow → increment current window
 redis.call("INCR", current_key)
 redis.call("EXPIRE", current_key, window * 2)
 

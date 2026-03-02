@@ -18,6 +18,7 @@ const fetchWithTimeout = async (input, init) => {
 };
 
 let refreshPromise = null;
+let logoutPromise = null;
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,
@@ -35,7 +36,9 @@ export const api = async (args, api, extraOptions) => {
     "/api/v1/auth/refreshtoken",
   );
 
-  if (isRefreshCall) return result;
+  const isLogoutCall = (requestUrl || "").includes("/api/v1/auth/logout");
+
+  if (isRefreshCall || isLogoutCall) return result;
 
   try {
     if (!refreshPromise) {
@@ -52,7 +55,22 @@ export const api = async (args, api, extraOptions) => {
     }
 
     const refreshed = await refreshPromise;
-    if (!refreshed) return result;
+    if (!refreshed) {
+      if (!logoutPromise) {
+        logoutPromise = rawBaseQuery(
+          { url: "/api/v1/auth/logout", method: "POST" },
+          api,
+          extraOptions,
+        )
+          .catch(() => undefined)
+          .finally(() => {
+            logoutPromise = null;
+          });
+      }
+
+      await logoutPromise;
+      return result;
+    }
 
     result = await rawBaseQuery(args, api, extraOptions);
     return result;

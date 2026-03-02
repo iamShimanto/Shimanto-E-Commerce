@@ -26,5 +26,19 @@ export default function RequireAuth({ children }) {
         return <Navigate to="/login" replace state={{ from: location }} />
     }
 
+    if (user?.role !== "admin") {
+        return (
+            <Navigate
+                to="/login"
+                replace
+                state={{
+                    from: location,
+                    unauthorized: true,
+                    message: "Only admin can access this dashboard.",
+                }}
+            />
+        )
+    }
+
     return children
 }

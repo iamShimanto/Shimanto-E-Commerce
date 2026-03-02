@@ -108,7 +108,7 @@ export default function Categories() {
                 </div>
             ) : null}
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {isLoading
                     ? Array.from({ length: 6 }).map((_, idx) => (
                         <CategoryCardSkeleton key={idx} index={idx} />
