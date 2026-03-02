@@ -14,7 +14,15 @@ import Textarea from "../../components/ui/Textarea"
 import { CATEGORY_OPTIONS, SIZES } from "./productConstants"
 import { calcTotalStock, computeFinalPrice, formatMoneyBDT, safeId } from "./productUtils"
 
-export default function ProductFormModal({ open, mode, initialValue, onClose, onSubmit }) {
+export default function ProductFormModal({
+    open,
+    mode,
+    initialValue,
+    onClose,
+    onSubmit,
+    categories,
+    submitting = false,
+}) {
     const toast = useToast()
     const [form, setForm] = useState(() => initialValue)
     const [errors, setErrors] = useState(() => ({}))
@@ -56,8 +64,8 @@ export default function ProductFormModal({ open, mode, initialValue, onClose, on
             next.discountPercentage = "Discount must be 0-100"
         }
 
-        if (mode === "create" && !form.thumbnailPreview) {
-            next.thumbnail = "Thumbnail is required (design only)"
+        if (mode === "create" && !form.thumbnailFile) {
+            next.thumbnail = "Thumbnail is required"
         }
 
         if (!Array.isArray(form.variants) || form.variants.length < 1) {
@@ -126,22 +134,25 @@ export default function ProductFormModal({ open, mode, initialValue, onClose, on
         }))
     }
 
-    const submit = (e) => {
+    const submit = async (e) => {
         e.preventDefault()
         if (!validate()) {
             toast.error("Validation", "Please fix the highlighted fields")
             return
         }
-        onSubmit?.(form)
-        toast.success(mode === "edit" ? "Updated" : "Created", "Saved locally (no API)")
-        onClose?.()
+
+        try {
+            await Promise.resolve(onSubmit?.(form))
+        } catch {
+            // parent shows toast; keep modal open
+        }
     }
 
     return (
         <Modal
             open={open}
             title={mode === "edit" ? "Edit product" : "Create product"}
-            description="Design-only form — no API calls"
+            description="Create/update products (API-backed)"
             onClose={onClose}
         >
             <form onSubmit={submit} className="space-y-6">
@@ -173,11 +184,16 @@ export default function ProductFormModal({ open, mode, initialValue, onClose, on
                                     aria-invalid={Boolean(errors.category)}
                                 >
                                     <option value="">Select category</option>
-                                    {CATEGORY_OPTIONS.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
+                                    {(Array.isArray(categories) && categories.length
+                                        ? categories.map((c) => ({ id: c?._id, name: c?.name }))
+                                        : CATEGORY_OPTIONS
+                                    )
+                                        .filter((c) => c?.id && c?.name)
+                                        .map((c) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name}
+                                            </option>
+                                        ))}
                                 </Select>
                             </Field>
 
@@ -452,8 +468,13 @@ export default function ProductFormModal({ open, mode, initialValue, onClose, on
                         <Button type="button" variant="secondary" onClick={onClose}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={!canSubmit}>
-                            <Check size={18} /> {mode === "edit" ? "Save changes" : "Create"}
+                        <Button type="submit" disabled={!canSubmit || submitting}>
+                            <Check size={18} />
+                            {submitting
+                                ? "Saving…"
+                                : mode === "edit"
+                                    ? "Save changes"
+                                    : "Create"}
                         </Button>
                     </div>
                 </div>

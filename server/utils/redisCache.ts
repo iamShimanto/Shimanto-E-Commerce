@@ -64,3 +64,35 @@ export async function existsCache(key: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function delCacheByPrefix(
+  prefix: string,
+  options: { batchSize?: number } = {},
+): Promise<number> {
+  const batchSize = options.batchSize ?? 200;
+  let cursor = "0";
+  let deleted = 0;
+
+  try {
+    do {
+      const res = await redis.scan(
+        cursor,
+        "MATCH",
+        `${prefix}*`,
+        "COUNT",
+        String(batchSize),
+      );
+
+      cursor = res[0];
+      const keys = res[1] ?? [];
+      if (keys.length) {
+        deleted += await redis.del(...keys);
+      }
+    } while (cursor !== "0");
+
+    return deleted;
+  } catch (err) {
+    console.error("delCacheByPrefix error:", err);
+    return deleted;
+  }
+}

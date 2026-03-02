@@ -8,7 +8,12 @@ import { successResponse } from "../utils/successResponse";
 import { CategoryModel } from "../models/category.model";
 import { productModel } from "../models/product.model";
 import { generateUniqueSlug } from "../utils/generateSlug";
-import { delCache, getCache, setCache } from "../utils/redisCache";
+import {
+  delCache,
+  delCacheByPrefix,
+  getCache,
+  setCache,
+} from "../utils/redisCache";
 import { Types } from "mongoose";
 
 type MulterFieldFiles = {
@@ -17,6 +22,15 @@ type MulterFieldFiles = {
 };
 
 const product_sizes_enum = ["s", "m", "l", "xl", "2xl", "3xl"];
+
+function parseMaybeJson(value: unknown, fieldName: string) {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new ApiError(400, `Invalid ${fieldName} format`);
+  }
+}
 
 export const createProduct: RequestHandler = async (req, res) => {
   const {
@@ -30,29 +44,75 @@ export const createProduct: RequestHandler = async (req, res) => {
     discountPercentage,
   } = req.body;
   const files = req.files as MulterFieldFiles | undefined;
+
+  const parsedVariants = parseMaybeJson(variants, "variants");
+  const parsedTags = parseMaybeJson(tags, "tags");
+
+  const parsedPrice = typeof price === "number" ? price : Number(price);
+  const parsedDiscountPercentage =
+    typeof discountPercentage === "number"
+      ? discountPercentage
+      : discountPercentage == null || String(discountPercentage).trim() === ""
+        ? undefined
+        : Number(discountPercentage);
+
+  const parsedIsActive =
+    typeof isActive === "boolean"
+      ? isActive
+      : isActive === "true"
+        ? true
+        : isActive === "false"
+          ? false
+          : undefined;
+
   if (!title) throw new ApiError(400, "Product title is required");
   if (!description) throw new ApiError(400, "Product Description is required");
   if (!category) throw new ApiError(400, "Product Category is required");
   if (!price) throw new ApiError(400, "Product Price is required");
 
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    throw new ApiError(400, "Product Price must be a positive number");
+  }
+
+  if (
+    typeof parsedDiscountPercentage !== "undefined" &&
+    (!Number.isFinite(parsedDiscountPercentage) ||
+      parsedDiscountPercentage < 0 ||
+      parsedDiscountPercentage > 100)
+  ) {
+    throw new ApiError(400, "discountPercentage must be between 0 and 100");
+  }
+
   const isCategoryExist = await CategoryModel.findById(category);
   if (!isCategoryExist) throw new ApiError(400, "Enter a valid Category");
 
-  if (!Array.isArray(variants) || variants.length === 0) {
+  if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
     throw new ApiError(400, "Minimum 1 variant is required");
   }
 
-  for (const variant of variants) {
-    if (!variant.sku) throw new ApiError(400, "Product SKU is required");
-    if (!variant.color) throw new ApiError(400, "Color is required");
-    if (!variant.sizes) throw new ApiError(400, "Size is required");
-    if (!product_sizes_enum.includes(variant.sizes))
-      throw new ApiError(400, "Enter a valid size");
-    if (!variant.stock || variant.stock < 1)
-      throw new ApiError(400, "Product stock required and must be more than 0");
-  }
+  const normalizedVariants = parsedVariants.map((variant) => {
+    const sku = String(variant?.sku || "").trim();
+    const color = String(variant?.color || "").trim();
+    const sizes = variant?.sizes;
+    const stock = Number(variant?.stock);
 
-  const skus = variants.map((v) => v.sku);
+    if (!sku) throw new ApiError(400, "Product SKU is required");
+    if (!color) throw new ApiError(400, "Color is required");
+    if (!sizes) throw new ApiError(400, "Size is required");
+    if (!product_sizes_enum.includes(String(sizes)))
+      throw new ApiError(400, "Enter a valid size");
+    if (!Number.isFinite(stock) || stock < 1)
+      throw new ApiError(400, "Product stock required and must be more than 0");
+
+    return {
+      sku,
+      color,
+      sizes: String(sizes),
+      stock,
+    };
+  });
+
+  const skus = normalizedVariants.map((v) => v.sku);
   if (new Set(skus).size !== skus.length)
     throw new ApiError(400, "sku must be unique");
 
@@ -83,15 +143,17 @@ export const createProduct: RequestHandler = async (req, res) => {
     slug,
     description,
     category,
-    price,
-    discountPercentage,
-    variants,
-    tags,
-    isActive,
+    price: parsedPrice,
+    discountPercentage: parsedDiscountPercentage,
+    variants: normalizedVariants,
+    tags: Array.isArray(parsedTags) ? parsedTags : undefined,
+    isActive: typeof parsedIsActive === "boolean" ? parsedIsActive : undefined,
     thumbnail: thumbnailUrl,
     images: imageUrls,
   });
   await newProduct.save();
+
+  await delCacheByPrefix("products:list:v1:");
 
   successResponse(res, "Product Created Successfully", 201, newProduct);
 };
@@ -199,6 +261,9 @@ export const updateProduct: RequestHandler = async (req, res) => {
     isActive,
   } = req.body;
 
+  const parsedVariants = parseMaybeJson(variants, "variants");
+  const parsedTags = parseMaybeJson(tags, "tags");
+
   const files = (req.files as MulterFieldFiles) || undefined;
   const thumbnail = files?.thumbnail?.[0];
   const images = files?.images ?? [];
@@ -264,24 +329,45 @@ export const updateProduct: RequestHandler = async (req, res) => {
     }
     existProduct.isActive = parsedIsActive;
   }
-  if (tags && tags.length > 0 && Array.isArray(tags)) existProduct.tags = tags;
+  if (Array.isArray(parsedTags)) {
+    existProduct.tags = parsedTags;
+  }
 
-  if (Array.isArray(variants) && variants.length > 0) {
-    for (const variant of variants) {
-      if (!variant.sku) throw new ApiError(400, "Product SKU is required");
-      if (!variant.color) throw new ApiError(400, "Color is required");
-      if (!variant.sizes) throw new ApiError(400, "Size is required");
-      if (!product_sizes_enum.includes(variant.sizes))
+  if (typeof parsedVariants !== "undefined") {
+    if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+      throw new ApiError(400, "Minimum 1 variant is required");
+    }
+
+    const normalizedVariants = parsedVariants.map((variant) => {
+      const sku = String(variant?.sku || "").trim();
+      const color = String(variant?.color || "").trim();
+      const sizes = variant?.sizes;
+      const stock = Number(variant?.stock);
+
+      if (!sku) throw new ApiError(400, "Product SKU is required");
+      if (!color) throw new ApiError(400, "Color is required");
+      if (!sizes) throw new ApiError(400, "Size is required");
+      if (!product_sizes_enum.includes(String(sizes)))
         throw new ApiError(400, "Enter a valid size");
-      if (!variant.stock || variant.stock < 1)
+      if (!Number.isFinite(stock) || stock < 1)
         throw new ApiError(
           400,
           "Product stock required and must be more than 0",
         );
-    }
-    const skus = variants.map((v) => v.sku);
+
+      return {
+        sku,
+        color,
+        sizes: String(sizes),
+        stock,
+      };
+    });
+
+    const skus = normalizedVariants.map((v) => v.sku);
     if (new Set(skus).size !== skus.length)
       throw new ApiError(400, "sku must be unique");
+
+    existProduct.variants = normalizedVariants;
   }
 
   if (thumbnail) {
@@ -296,6 +382,8 @@ export const updateProduct: RequestHandler = async (req, res) => {
   await existProduct.save();
   const cacheKey = `product:slug:${slug}`;
   await delCache(cacheKey);
+
+  await delCacheByPrefix("products:list:v1:");
 
   return successResponse(
     res,

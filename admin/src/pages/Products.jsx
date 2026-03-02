@@ -13,12 +13,18 @@ import {
 import { useToast } from "../hooks/useToast"
 import { cn } from "../lib/cn"
 
+import { useGetCategoriesQuery } from "../api/category/categoryApi"
+import {
+    useCreateProductMutation,
+    useGetProductsQuery,
+    useUpdateProductMutation,
+} from "../api/product/productApi"
+
 import Button from "../components/ui/Button"
 import Select from "../components/ui/Select"
 
 import ProductFormModal from "../features/products/ProductFormModal"
 import StatusPill from "../features/products/StatusPill"
-import { CATEGORY_OPTIONS } from "../features/products/productConstants"
 import {
     calcTotalStock,
     computeFinalPrice,
@@ -39,60 +45,67 @@ export default function Products() {
     const [modalMode, setModalMode] = useState("create")
     const [editingId, setEditingId] = useState(null)
 
-    const [products, setProducts] = useState(() => {
-        const now = new Date().toISOString()
-        return [
-            {
-                id: safeId(),
-                title: "Premium Hoodie",
-                description: "Soft fleece hoodie with premium stitching.",
-                category: "cat_clothing",
-                price: 1990,
-                discountPercentage: 10,
-                tags: ["winter", "new"],
-                isActive: true,
-                thumbnailPreview: "",
-                imagesPreview: [],
-                variants: [
-                    { id: safeId(), sku: "HD-001-BLK-M", color: "Black", sizes: "m", stock: 12 },
-                    { id: safeId(), sku: "HD-001-GRY-L", color: "Gray", sizes: "l", stock: 8 },
-                ],
-                updatedAt: now,
-            },
-            {
-                id: safeId(),
-                title: "Running Sneakers",
-                description: "Lightweight shoes designed for comfort.",
-                category: "cat_shoes",
-                price: 3490,
-                discountPercentage: 0,
-                tags: ["sport"],
-                isActive: false,
-                thumbnailPreview: "",
-                imagesPreview: [],
-                variants: [
-                    { id: safeId(), sku: "SN-101-WHT-XL", color: "White", sizes: "xl", stock: 6 },
-                ],
-                updatedAt: now,
-            },
-        ]
+    const {
+        data: categories = [],
+    } = useGetCategoriesQuery()
+
+    const {
+        data: productsResult,
+        isLoading,
+        isFetching,
+        isError,
+        error,
+        refetch,
+    } = useGetProductsQuery({
+        page,
+        limit: pageSize,
+        category: category !== "all" ? category : undefined,
+        search: query.trim() ? query.trim() : undefined,
     })
 
+    const [createProduct, { isLoading: isCreating }] = useCreateProductMutation()
+    const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation()
+
+    const products = useMemo(() => productsResult?.items ?? [], [productsResult])
+
+    const totalPages = Math.max(1, Number(productsResult?.pagination?.totalPages) || 1)
+
     const editingProduct = useMemo(
-        () => products.find((p) => p.id === editingId) || null,
+        () => products.find((p) => String(p?._id) === String(editingId)) || null,
         [products, editingId]
     )
-
+    // initial form value
     const initialFormValue = useMemo(() => {
         if (modalMode === "edit" && editingProduct) {
             return {
-                ...editingProduct,
+                id: String(editingProduct?._id || safeId()),
+                slug: editingProduct?.slug,
+                title: editingProduct?.title ?? "",
+                description: editingProduct?.description ?? "",
+                category: String(editingProduct?.category?._id ?? editingProduct?.category ?? ""),
+                price: String(editingProduct?.price ?? ""),
+                discountPercentage: String(editingProduct?.discountPercentage ?? 0),
+                tags: Array.isArray(editingProduct?.tags) ? editingProduct.tags : [],
+                isActive: Boolean(editingProduct?.isActive ?? true),
                 thumbnailFile: null,
+                thumbnailPreview: editingProduct?.thumbnail ?? "",
                 imageFiles: [],
+                imagesPreview: Array.isArray(editingProduct?.images) ? editingProduct.images : [],
+                variants: Array.isArray(editingProduct?.variants)
+                    ? editingProduct.variants.map((v) => ({
+                        id: safeId(),
+                        sku: v?.sku ?? "",
+                        color: v?.color ?? "",
+                        sizes: v?.sizes ?? "m",
+                        stock: v?.stock ?? 1,
+                    }))
+                    : [{ id: safeId(), sku: "", color: "", sizes: "m", stock: 1 }],
+                updatedAt: editingProduct?.updatedAt ?? new Date().toISOString(),
             }
         }
         return {
             id: safeId(),
+            slug: "",
             title: "",
             description: "",
             category: "",
@@ -109,25 +122,14 @@ export default function Products() {
         }
     }, [modalMode, editingProduct])
 
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase()
-        return products
-            .filter((p) => {
-                if (status === "active" && !p.isActive) return false
-                if (status === "inactive" && p.isActive) return false
-                if (category !== "all" && p.category !== category) return false
-                if (!q) return true
-                const hay = `${p.title} ${p.description} ${(p.tags || []).join(" ")}`.toLowerCase()
-                return hay.includes(q)
-            })
-            .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-    }, [products, query, status, category])
-
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
     const pageItems = useMemo(() => {
-        const start = (page - 1) * pageSize
-        return filtered.slice(start, start + pageSize)
-    }, [filtered, page, pageSize])
+        if (status === "all") return products
+        return products.filter((p) => {
+            if (status === "active") return Boolean(p?.isActive)
+            if (status === "inactive") return !p?.isActive
+            return true
+        })
+    }, [products, status])
 
     const openCreate = () => {
         setModalMode("create")
@@ -140,23 +142,61 @@ export default function Products() {
         setEditingId(id)
         setModalOpen(true)
     }
+    // create and update product
+    const onSubmit = async (value) => {
+        const payload = {
+            title: value.title,
+            description: value.description,
+            category: value.category,
+            price: Number(value.price),
+            discountPercentage: Number(value.discountPercentage || 0),
+            tags: value.tags || [],
+            isActive: Boolean(value.isActive),
+            variants: (value.variants || []).map((v) => ({
+                sku: String(v.sku || "").trim(),
+                color: String(v.color || "").trim(),
+                sizes: v.sizes,
+                stock: Number(v.stock),
+            })),
+            thumbnailFile: value.thumbnailFile,
+            imageFiles: value.imageFiles || [],
+        }
 
-    const onSubmit = (value) => {
-        setProducts((prev) => {
-            const now = new Date().toISOString()
-            if (modalMode === "edit") {
-                return prev.map((p) => (p.id === value.id ? { ...value, updatedAt: now } : p))
+        try {
+            if (modalMode === "edit" && value.slug) {
+                await updateProduct({ slug: value.slug, data: payload }).unwrap()
+                toast.success("Updated", "Product updated successfully")
+            } else {
+                await createProduct(payload).unwrap()
+                toast.success("Created", "Product created successfully")
             }
-            return [{ ...value, updatedAt: now }, ...prev]
-        })
+            setModalOpen(false)
+        } catch (err) {
+            const msg =
+                err?.data?.message ||
+                (typeof err?.error === "string" ? err.error : null) ||
+                "Request failed"
+            toast.error("Error", msg)
+        }
     }
-
+    // delete product
     const onDelete = (id) => {
-        setProducts((prev) => prev.filter((p) => p.id !== id))
-        toast.success("Deleted", "Removed locally (no API)")
+        toast.error("Not implemented", "Delete endpoint not available yet")
+    }
+    // category
+    const categoryName = (cat) => {
+        if (!cat) return "—"
+        if (typeof cat === "object") return cat?.name || cat?.slug || "—"
+        const found = categories.find((c) => String(c?._id) === String(cat))
+        return found?.name || "—"
     }
 
-    const categoryName = (id) => CATEGORY_OPTIONS.find((c) => c.id === id)?.name || "—"
+    const errorText =
+        error?.data?.message ||
+        error?.data?.error ||
+        (typeof error?.data === "string" ? error.data : null) ||
+        (typeof error === "string" ? error : null) ||
+        "Failed to load products"
 
     return (
         <div className="space-y-5">
@@ -164,16 +204,30 @@ export default function Products() {
                 <div>
                     <div className="text-lg font-extrabold tracking-tight">Products</div>
                     <div className="mt-1 text-sm font-semibold text-(--text-muted)">
-                        Design-only catalog manager (no API fetch)
+                        Manage products.
                     </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => refetch()}
+                        disabled={isFetching}
+                    >
+                        {isFetching ? "Refreshing…" : "Refresh"}
+                    </Button>
                     <Button type="button" onClick={openCreate}>
                         <Plus size={18} /> Create product
                     </Button>
                 </div>
             </div>
+
+            {isError ? (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
+                    {errorText}
+                </div>
+            ) : null}
 
             <div className="grid gap-3 lg:grid-cols-12">
                 <div className="lg:col-span-6">
@@ -214,11 +268,13 @@ export default function Products() {
                         }}
                     >
                         <option value="all">All categories</option>
-                        {CATEGORY_OPTIONS.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
+                        {categories
+                            .filter((c) => c?._id && c?.name)
+                            .map((c) => (
+                                <option key={c._id} value={c.slug}>
+                                    {c.name}
+                                </option>
+                            ))}
                     </Select>
                 </div>
             </div>
@@ -228,7 +284,7 @@ export default function Products() {
                     <div className="min-w-0">
                         <div className="truncate text-sm font-extrabold">Product list</div>
                         <div className="mt-0.5 text-xs font-semibold text-(--text-muted)">
-                            {filtered.length} items
+                            {isLoading ? "Loading…" : `${pageItems.length} items`}
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-2 rounded-2xl bg-(--surface-2) px-3 py-2 text-xs font-extrabold text-(--text-muted)">
@@ -241,6 +297,7 @@ export default function Products() {
                         <thead>
                             <tr className="bg-(--surface-2)">
                                 <Th>Product</Th>
+                                <Th>Slug</Th>
                                 <Th>Category</Th>
                                 <Th className="text-right">Price</Th>
                                 <Th className="text-right">Stock</Th>
@@ -249,21 +306,27 @@ export default function Products() {
                             </tr>
                         </thead>
                         <tbody>
-                            {pageItems.length ? (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={6} className="px-5 py-10 text-center">
+                                        <div className="text-sm font-extrabold">Loading products…</div>
+                                    </td>
+                                </tr>
+                            ) : pageItems.length ? (
                                 pageItems.map((p) => {
                                     const totalStock = calcTotalStock(p.variants)
                                     const final = computeFinalPrice(p.price, p.discountPercentage)
                                     return (
                                         <tr
-                                            key={p.id}
+                                            key={p._id || p.slug}
                                             className="border-t border-(--border) hover:bg-(--surface-2)/70"
                                         >
                                             <Td>
                                                 <div className="flex items-center gap-3">
                                                     <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2)">
-                                                        {p.thumbnailPreview ? (
+                                                        {p.thumbnail || p.thumbnailPreview ? (
                                                             <img
-                                                                src={p.thumbnailPreview}
+                                                                src={p.thumbnail || p.thumbnailPreview}
                                                                 alt=""
                                                                 className="h-full w-full object-cover"
                                                             />
@@ -282,6 +345,9 @@ export default function Products() {
                                                 </div>
                                             </Td>
 
+                                            <Td>
+                                                <div className="text-sm font-extrabold">{p?.slug}</div>
+                                            </Td>
                                             <Td>
                                                 <div className="text-sm font-extrabold">{categoryName(p.category)}</div>
                                                 <div className="text-xs font-semibold text-(--text-muted)">
@@ -313,7 +379,7 @@ export default function Products() {
                                                         type="button"
                                                         variant="secondary"
                                                         size="sm"
-                                                        onClick={() => openEdit(p.id)}
+                                                        onClick={() => openEdit(String(p?._id))}
                                                     >
                                                         <Pencil size={16} /> Edit
                                                     </Button>
@@ -321,7 +387,7 @@ export default function Products() {
                                                         type="button"
                                                         variant="danger"
                                                         size="sm"
-                                                        onClick={() => onDelete(p.id)}
+                                                        onClick={() => onDelete(String(p?._id))}
                                                     >
                                                         <Trash2 size={16} /> Delete
                                                     </Button>
@@ -385,6 +451,8 @@ export default function Products() {
                 initialValue={initialFormValue}
                 onClose={() => setModalOpen(false)}
                 onSubmit={onSubmit}
+                categories={categories}
+                submitting={isCreating || isUpdating}
             />
         </div>
     )

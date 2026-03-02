@@ -1,22 +1,35 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { useLocation, useNavigate } from "react-router"
 import { useToast } from "../hooks/useToast"
+import { useDispatch } from "react-redux"
 
 import Button from "../components/ui/Button"
 import Field from "../components/ui/Field"
 import Input from "../components/ui/Input"
-import { useLoginMutation, useProfileQuery } from "../api/auth/authApi"
+import {
+  authApi,
+  useLoginMutation,
+  useLogoutMutation,
+  useProfileQuery,
+} from "../api/auth/authApi"
 
 export default function Login() {
+  const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
   const toast = useToast()
 
-  const { data: user } = useProfileQuery(undefined, {
+  const unauthorizedToastShownRef = useRef(false)
+
+  const {
+    data: user,
+    refetch: refetchProfile,
+  } = useProfileQuery(undefined, {
     refetchOnMountOrArgChange: true,
   })
   const [triggerLogin, { isLoading }] = useLoginMutation()
+  const [triggerLogout] = useLogoutMutation()
 
   const {
     register,
@@ -30,14 +43,55 @@ export default function Login() {
   })
 
   useEffect(() => {
-    if (user) {
+    if (!user) return
+    if (user?.role === "admin") {
       navigate("/", { replace: true })
+      return
     }
-  }, [user, navigate])
+
+    if (!unauthorizedToastShownRef.current) {
+      unauthorizedToastShownRef.current = true
+      toast.error("Unauthorized", "Only admin can access this dashboard.")
+    }
+  }, [user, navigate, toast])
+
+  useEffect(() => {
+    const isUnauthorized = Boolean(location.state?.unauthorized)
+    if (!isUnauthorized || unauthorizedToastShownRef.current) return
+
+    unauthorizedToastShownRef.current = true
+    toast.error(
+      "Unauthorized",
+      location.state?.message || "Only admin can access this dashboard."
+    )
+
+    navigate("/login", {
+      replace: true,
+      state: {
+        from: location.state?.from,
+      },
+    })
+  }, [location.state, navigate, toast])
 
   const onSubmit = async (values) => {
     try {
       await triggerLogin(values).unwrap()
+
+      const profileResult = await refetchProfile()
+      const role = profileResult?.data?.role
+
+      if (role !== "admin") {
+        try {
+          await triggerLogout().unwrap()
+        } catch {
+          // ignore
+        } finally {
+          dispatch(authApi.util.resetApiState())
+        }
+
+        toast.error("Unauthorized", "Only admin can access this dashboard.")
+        return
+      }
 
       const nextPath = location.state?.from?.pathname || "/"
       navigate(nextPath, { replace: true })

@@ -139,7 +139,11 @@ export const logInUser: RequestHandler = async (req, res) => {
     maxAge: 1296000000,
   });
 
-  return successResponse(res, "Login Successful", 200);
+  return successResponse(res, "Login Successful", 200, {
+    name: user.fullName,
+    email: user.email,
+    role: user.role,
+  });
 };
 
 export const resetPassword: RequestHandler = async (req, res) => {
@@ -213,7 +217,7 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  await delCache(tokenKey);  // delete cache
+  await delCache(tokenKey); // delete cache
   await delCache(`resetpass:cooldown:${cached.email}`);
 
   return successResponse(res, "User password updated successfully", 200);

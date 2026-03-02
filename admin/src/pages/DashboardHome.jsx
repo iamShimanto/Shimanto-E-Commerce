@@ -9,6 +9,7 @@ import {
 } from "recharts"
 
 import Button from "../components/ui/Button"
+import { Link } from "react-router"
 
 const data = [
     { name: "Mon", sales: 1200 },
@@ -52,7 +53,7 @@ export default function DashboardHome() {
 
                 <div className="flex flex-wrap gap-2">
                     <Button size="sm">
-                        Create Product
+                        <Link to={"/products"}>Create Product</Link>
                     </Button>
                     <Button variant="secondary" size="sm">
                         Export
