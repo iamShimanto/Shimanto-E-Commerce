@@ -5,7 +5,7 @@ import api from "../api";
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: api,
-  tagTypes: ["Auth"],
+  tagTypes: ["Auth", "Users"],
   endpoints: (builder) => ({
     profile: builder.query({
       query: () => ({
@@ -49,6 +49,57 @@ export const authApi = createApi({
       },
       invalidatesTags: ["Auth"],
     }),
+    getUsers: builder.query({
+      query: ({
+        page = 1,
+        limit = 10,
+        search,
+        role,
+        isVerified,
+        hasAvatar,
+        sortBy,
+        sortOrder,
+      } = {}) => ({
+        url: "/api/v1/auth/all-users",
+        method: "GET",
+        params: {
+          page,
+          limit,
+          ...(search ? { search } : {}),
+          ...(role ? { role } : {}),
+          ...(typeof isVerified !== "undefined" ? { isVerified } : {}),
+          ...(typeof hasAvatar !== "undefined" ? { hasAvatar } : {}),
+          ...(sortBy ? { sortBy } : {}),
+          ...(sortOrder ? { sortOrder } : {}),
+        },
+      }),
+      transformResponse: (response) => response?.data ?? null,
+      providesTags: (result) =>
+        result?.items?.length
+          ? [
+              { type: "Users", id: "LIST" },
+              ...result.items
+                .map((u) => u?._id)
+                .filter(Boolean)
+                .map((id) => ({ type: "Users", id })),
+            ]
+          : [{ type: "Users", id: "LIST" }],
+    }),
+
+    updateRole: builder.mutation({
+      query: ({ id, role }) => ({
+        url: `/api/v1/auth/update-role/${id}`,
+        method: "PUT",
+        params: { role },
+      }),
+      invalidatesTags: (result, error, arg) =>
+        error
+          ? []
+          : [
+              { type: "Users", id: "LIST" },
+              ...(arg?.id ? [{ type: "Users", id: arg.id }] : []),
+            ],
+    }),
   }),
 });
 
@@ -57,4 +108,6 @@ export const {
   useLogoutMutation,
   useProfileQuery,
   useUpdateProfileMutation,
+  useGetUsersQuery,
+  useUpdateRoleMutation,
 } = authApi;

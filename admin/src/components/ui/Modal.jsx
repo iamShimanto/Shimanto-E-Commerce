@@ -15,10 +15,13 @@ export default function Modal({ open, title, description, onClose, children }) {
 
     return (
         <div className="fixed inset-0 z-50">
-            <div className="absolute inset-0 bg-black/45" onClick={onClose} />
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-md"
+                onClick={onClose}
+            />
             <div className="absolute inset-0 overflow-y-auto p-4 sm:p-8">
                 <div className="mx-auto w-full max-w-4xl">
-                    <div className="rounded-3xl border border-(--border) bg-(--surface) shadow-2xl shadow-black/30">
+                    <div className="rounded-3xl border border-(--border) bg-(--surface) shadow-2xl shadow-black/20 ring-1 ring-black/5" style={{ boxShadow: "var(--shadow-soft)" }}>
                         <div className="flex items-start justify-between gap-3 border-b border-(--border) px-5 py-4">
                             <div className="min-w-0">
                                 <div className="truncate text-base font-extrabold tracking-tight">
