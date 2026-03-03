@@ -4,11 +4,9 @@ export type Size = "s" | "m" | "l" | "xl" | "2xl" | "3xl";
 
 export interface IProductVariant {
   sku: string;
-  attribute: {
-    color: string;
-    sizes: Size;
-    stock: number;
-  };
+  color: string;
+  sizes: Size;
+  stock: number;
 }
 
 export interface IProduct {
