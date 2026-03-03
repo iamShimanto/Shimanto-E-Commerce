@@ -89,8 +89,10 @@ export default function Products() {
                 isActive: Boolean(editingProduct?.isActive ?? true),
                 thumbnailFile: null,
                 thumbnailPreview: editingProduct?.thumbnail ?? "",
+                existingImages: Array.isArray(editingProduct?.images) ? editingProduct.images : [],
+                destroyImages: [],
                 imageFiles: [],
-                imagesPreview: Array.isArray(editingProduct?.images) ? editingProduct.images : [],
+                newImagesPreview: [],
                 variants: Array.isArray(editingProduct?.variants)
                     ? editingProduct.variants.map((v) => ({
                         id: safeId(),
@@ -115,8 +117,10 @@ export default function Products() {
             isActive: true,
             thumbnailFile: null,
             thumbnailPreview: "",
+            existingImages: [],
+            destroyImages: [],
             imageFiles: [],
-            imagesPreview: [],
+            newImagesPreview: [],
             variants: [{ id: safeId(), sku: "", color: "", sizes: "m", stock: 1 }],
             updatedAt: new Date().toISOString(),
         }
@@ -160,6 +164,7 @@ export default function Products() {
             })),
             thumbnailFile: value.thumbnailFile,
             imageFiles: value.imageFiles || [],
+            destroyImages: Array.isArray(value.destroyImages) ? value.destroyImages : [],
         }
 
         try {
@@ -178,10 +183,6 @@ export default function Products() {
                 "Request failed"
             toast.error("Error", msg)
         }
-    }
-    // delete product
-    const onDelete = (id) => {
-        toast.error("Not implemented", "Delete endpoint not available yet")
     }
     // category
     const categoryName = (cat) => {
@@ -279,7 +280,7 @@ export default function Products() {
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-(--border) bg-(--surface) shadow-sm">
+            <div className="overflow-hidden rounded-3xl border border-(--border) bg-(--surface) shadow-sm ring-1 ring-black/5">
                 <div className="flex items-center justify-between gap-3 border-b border-(--border) px-5 py-4">
                     <div className="min-w-0">
                         <div className="truncate text-sm font-extrabold">Product list</div>
@@ -319,11 +320,11 @@ export default function Products() {
                                     return (
                                         <tr
                                             key={p._id || p.slug}
-                                            className="border-t border-(--border) hover:bg-(--surface-2)/70"
+                                            className="border-t border-(--border) transition-colors hover:bg-(--surface-2)"
                                         >
                                             <Td>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2)">
+                                                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2) ring-1 ring-black/5">
                                                         {p.thumbnail || p.thumbnailPreview ? (
                                                             <img
                                                                 src={p.thumbnail || p.thumbnailPreview}
@@ -387,7 +388,6 @@ export default function Products() {
                                                         type="button"
                                                         variant="danger"
                                                         size="sm"
-                                                        onClick={() => onDelete(String(p?._id))}
                                                     >
                                                         <Trash2 size={16} /> Delete
                                                     </Button>

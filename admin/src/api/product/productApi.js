@@ -96,6 +96,9 @@ export const productApi = createApi({
         if (Array.isArray(data?.tags))
           formData.append("tags", JSON.stringify(data.tags));
 
+        if (Array.isArray(data?.destroyImages))
+          formData.append("destroyImages", JSON.stringify(data.destroyImages));
+
         if (data?.thumbnailFile)
           formData.append("thumbnail", data.thumbnailFile);
         (data?.imageFiles ?? []).forEach((f) => formData.append("images", f));

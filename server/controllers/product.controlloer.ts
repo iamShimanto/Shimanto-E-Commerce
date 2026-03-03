@@ -248,8 +248,10 @@ export const getSingleProduct: RequestHandler = async (req, res) => {
 
 export const updateProduct: RequestHandler = async (req, res) => {
   const { slug } = req.params;
+
   const existProduct = await productModel.findOne({ slug });
   if (!existProduct) throw new ApiError(404, "Product not exist");
+
   const {
     title,
     description,
@@ -259,10 +261,17 @@ export const updateProduct: RequestHandler = async (req, res) => {
     variants,
     tags,
     isActive,
+    destroyImages,
   } = req.body;
 
   const parsedVariants = parseMaybeJson(variants, "variants");
   const parsedTags = parseMaybeJson(tags, "tags");
+
+  // Normalize destroyImages (it may be undefined / JSON string / invalid)
+  const parsedDestroyImages = parseMaybeJson(destroyImages, "destroyImages");
+  const destroyImagesArr: string[] = Array.isArray(parsedDestroyImages)
+    ? parsedDestroyImages.filter((x): x is string => typeof x === "string")
+    : [];
 
   const files = (req.files as MulterFieldFiles) || undefined;
   const thumbnail = files?.thumbnail?.[0];
@@ -308,6 +317,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
       typeof discountPercentage === "number"
         ? discountPercentage
         : Number(discountPercentage);
+
     if (!Number.isFinite(discountNum) || discountNum < 0 || discountNum > 100) {
       throw new ApiError(400, "discountPercentage must be between 0 and 100");
     }
@@ -329,6 +339,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
     }
     existProduct.isActive = parsedIsActive;
   }
+
   if (Array.isArray(parsedTags)) {
     existProduct.tags = parsedTags;
   }
@@ -379,10 +390,47 @@ export const updateProduct: RequestHandler = async (req, res) => {
     existProduct.thumbnail = imageRes.secure_url;
   }
 
+  // ---------- Product images update ----------
+  let imageUrl: string[] = [];
+
+  let totalImage = existProduct.images?.length ?? 0;
+  if (destroyImagesArr.length > 0) totalImage -= destroyImagesArr.length;
+  if (images.length > 0) totalImage += images.length;
+
+  if (totalImage > 6) throw new ApiError(400, "You can upload upto 6 images");
+  if (totalImage < 1) throw new ApiError(400, "Minimum 1 image should be stay");
+
+  imageUrl =
+    images.length > 0
+      ? await Promise.all(
+          images.map(async (img) => {
+            const r = await uploadToCloudinary(img, "products");
+            return r.secure_url;
+          }),
+        )
+      : [];
+
+  if (destroyImagesArr.length > 0) {
+    for (const url of destroyImagesArr) {
+      const publicUrl = url.split("/").pop()?.split(".")[0];
+      if (publicUrl) {
+        await destroyFromCloudinary(`products/${publicUrl}`);
+      }
+    }
+  }
+
+  const filteredImages: string[] =
+    existProduct.images?.filter((item) => !destroyImagesArr.includes(item)) ??
+    [];
+
+  imageUrl = imageUrl.concat(filteredImages);
+
+  if (imageUrl.length > 0) existProduct.images = imageUrl;
+
   await existProduct.save();
+
   const cacheKey = `product:slug:${slug}`;
   await delCache(cacheKey);
-
   await delCacheByPrefix("products:list:v1:");
 
   return successResponse(

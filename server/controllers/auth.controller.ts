@@ -11,6 +11,7 @@ import { UserModel } from "../models/user.model";
 import { successResponse } from "../utils/successResponse";
 import redis from "../Config/redis";
 import { delCache, getCache, setCache } from "../utils/redisCache";
+import { Types } from "mongoose";
 
 export const craeteUser: RequestHandler = async (req, res) => {
   const { fullName, email, password, phone, address } = req.body;
@@ -311,4 +312,121 @@ export const logOutUser: RequestHandler = async (req, res) => {
   });
 
   return successResponse(res, "Logout Successful", 200);
+};
+
+function escapeRegex(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export const getAllUsers: RequestHandler = async (req, res) => {
+  const pageRaw = Number(req.query.page ?? 1);
+  const limitRaw = Number(req.query.limit ?? 10);
+
+  const page = Number.isFinite(pageRaw) ? Math.max(1, Math.floor(pageRaw)) : 1;
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(100, Math.max(1, Math.floor(limitRaw)))
+    : 10;
+
+  const skip = (page - 1) * limit;
+
+  const search = String(req.query.search ?? req.query.q ?? "").trim();
+  const role = req.query.role ? String(req.query.role).trim() : "";
+
+  const isVerifiedRaw = req.query.isVerified ?? req.query.verified;
+  const isVerified =
+    isVerifiedRaw === "true"
+      ? true
+      : isVerifiedRaw === "false"
+        ? false
+        : undefined;
+
+  const hasAvatarRaw = req.query.hasAvatar;
+  const hasAvatar =
+    hasAvatarRaw === "true"
+      ? true
+      : hasAvatarRaw === "false"
+        ? false
+        : undefined;
+
+  const filter: Record<string, any> = {};
+
+  if (role) filter.role = role;
+  if (typeof isVerified === "boolean") filter.isVerified = isVerified;
+  if (typeof hasAvatar === "boolean") {
+    filter.avatar = hasAvatar
+      ? { $exists: true, $ne: "" }
+      : { $in: [null, ""] };
+  }
+
+  if (search) {
+    const regex = new RegExp(escapeRegex(search), "i");
+    const or: any[] = [{ fullName: regex }, { email: regex }];
+    const phoneNum = Number(search);
+    if (Number.isFinite(phoneNum)) or.push({ phone: phoneNum });
+    filter.$or = or;
+  }
+
+  const allowedSortFields = new Set([
+    "createdAt",
+    "fullName",
+    "email",
+    "role",
+    "isVerified",
+  ]);
+
+  const sortByRaw = String(req.query.sortBy ?? "createdAt");
+  const sortBy = allowedSortFields.has(sortByRaw) ? sortByRaw : "createdAt";
+  const sortOrderRaw = String(req.query.sortOrder ?? "desc").toLowerCase();
+  const sortOrder = sortOrderRaw === "asc" ? 1 : -1;
+
+  const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder };
+
+  const [users, total] = await Promise.all([
+    UserModel.find(filter)
+      .select("-password -__v")
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    UserModel.countDocuments(filter),
+  ]);
+
+  return successResponse(res, "Users fetched", 200, {
+    items: users,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
+};
+
+export const updateRole: RequestHandler = async (req, res) => {
+  const id = String((req.params as any).id);
+
+  if (!Types.ObjectId.isValid(id as any)) {
+    throw new ApiError(400, "Invalid user id");
+  }
+
+  const roleFromQuery = req.query.role;
+  const roleFromBody = (req.body as any)?.role;
+  const roleRaw =
+    typeof roleFromBody !== "undefined" ? roleFromBody : roleFromQuery;
+  const role = String(roleRaw || "").trim();
+
+  const allowedRoles = new Set(["user", "stuff", "admin"]);
+  if (!role || !allowedRoles.has(role)) {
+    throw new ApiError(400, "Invalid role");
+  }
+
+  const user = await UserModel.findByIdAndUpdate(
+    id,
+    { $set: { role } },
+    { new: true },
+  ).select("-password -__v");
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  return successResponse(res, "User Role Updated", 200, user);
 };

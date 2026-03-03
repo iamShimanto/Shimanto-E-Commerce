@@ -39,6 +39,31 @@ export default function ProductFormModal({
         }
     }, [])
 
+    const existingImages = useMemo(
+        () => (Array.isArray(form.existingImages) ? form.existingImages : []),
+        [form.existingImages]
+    )
+    const destroyImages = useMemo(
+        () => (Array.isArray(form.destroyImages) ? form.destroyImages : []),
+        [form.destroyImages]
+    )
+    const newImagesPreview = useMemo(
+        () => (Array.isArray(form.newImagesPreview) ? form.newImagesPreview : []),
+        [form.newImagesPreview]
+    )
+    const newImageFiles = useMemo(
+        () => (Array.isArray(form.imageFiles) ? form.imageFiles : []),
+        [form.imageFiles]
+    )
+
+    const keptExistingCount = useMemo(() => {
+        if (!existingImages.length) return 0
+        if (!destroyImages.length) return existingImages.length
+        return existingImages.filter((u) => !destroyImages.includes(u)).length
+    }, [existingImages, destroyImages])
+
+    const totalGalleryCount = keptExistingCount + newImageFiles.length
+
     const canSubmit = useMemo(() => {
         return form.title?.trim() && Number(form.price) > 0
     }, [form.title, form.price])
@@ -68,6 +93,11 @@ export default function ProductFormModal({
             next.thumbnail = "Thumbnail is required"
         }
 
+        if (mode === "edit") {
+            if (totalGalleryCount > 6) next.images = "Maximum 6 images are allowed"
+            if (totalGalleryCount < 1) next.images = "Minimum 1 image must remain"
+        }
+
         if (!Array.isArray(form.variants) || form.variants.length < 1) {
             next.variants = "Minimum 1 variant is required"
         } else {
@@ -94,10 +124,52 @@ export default function ProductFormModal({
 
     const onPickImages = (files) => {
         if (!files?.length) return
-        imageUrlsRef.current.forEach((u) => URL.revokeObjectURL(u))
-        const urlList = Array.from(files).slice(0, 6).map((f) => URL.createObjectURL(f))
-        imageUrlsRef.current = urlList
-        setForm((p) => ({ ...p, imageFiles: Array.from(files).slice(0, 6), imagesPreview: urlList }))
+
+        const picked = Array.from(files)
+        const remainingSlots = Math.max(0, 6 - totalGalleryCount)
+        if (remainingSlots === 0) {
+            toast.error("Limit", "You already have 6 images")
+            return
+        }
+
+        const accepted = picked.slice(0, remainingSlots)
+        if (picked.length > accepted.length) {
+            toast.error("Limit", `Only ${accepted.length} more image(s) allowed (max 6 total)`)
+        }
+
+        const urlList = accepted.map((f) => URL.createObjectURL(f))
+        imageUrlsRef.current = [...imageUrlsRef.current, ...urlList]
+
+        setForm((p) => ({
+            ...p,
+            imageFiles: [...(Array.isArray(p.imageFiles) ? p.imageFiles : []), ...accepted],
+            newImagesPreview: [...(Array.isArray(p.newImagesPreview) ? p.newImagesPreview : []), ...urlList],
+        }))
+    }
+
+    const toggleDestroyExistingImage = (url) => {
+        const u = String(url || "")
+        if (!u) return
+        setForm((p) => {
+            const prev = Array.isArray(p.destroyImages) ? p.destroyImages : []
+            const next = prev.includes(u) ? prev.filter((x) => x !== u) : [...prev, u]
+            return { ...p, destroyImages: next }
+        })
+    }
+
+    const removeNewImageAt = (index) => {
+        setForm((p) => {
+            const filesArr = Array.isArray(p.imageFiles) ? [...p.imageFiles] : []
+            const prevArr = Array.isArray(p.newImagesPreview) ? [...p.newImagesPreview] : []
+            const previewUrl = prevArr[index]
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl)
+                imageUrlsRef.current = imageUrlsRef.current.filter((u) => u !== previewUrl)
+            }
+            filesArr.splice(index, 1)
+            prevArr.splice(index, 1)
+            return { ...p, imageFiles: filesArr, newImagesPreview: prevArr }
+        })
     }
 
     const onAddTag = (raw) => {
@@ -326,7 +398,7 @@ export default function ProductFormModal({
                                     </div>
                                 </div>
                                 <div className="inline-flex items-center gap-2 rounded-xl bg-(--surface-2) px-2 py-1 text-[11px] font-extrabold text-(--text-muted)">
-                                    <ImageIcon size={14} /> {form.imagesPreview?.length || 0}/6
+                                    <ImageIcon size={14} /> {totalGalleryCount}/6
                                 </div>
                             </div>
 
@@ -364,6 +436,57 @@ export default function ProductFormModal({
                                 <div className="text-xs font-extrabold text-(--text-muted)">
                                     Gallery images
                                 </div>
+
+                                {errors.images ? (
+                                    <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-extrabold text-rose-700">
+                                        {errors.images}
+                                    </div>
+                                ) : null}
+
+                                {mode === "edit" && existingImages.length ? (
+                                    <div className="mt-3">
+                                        <div className="text-[11px] font-extrabold text-(--text-muted)">
+                                            Existing images (click to remove/undo)
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-3 gap-2">
+                                            {existingImages.slice(0, 6).map((src) => {
+                                                const willDestroy = destroyImages.includes(src)
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={src}
+                                                        onClick={() => toggleDestroyExistingImage(src)}
+                                                        className={cn(
+                                                            "relative aspect-square overflow-hidden rounded-2xl border bg-(--surface-2)",
+                                                            willDestroy ? "border-rose-300" : "border-(--border)"
+                                                        )}
+                                                        title={willDestroy ? "Undo remove" : "Remove"}
+                                                    >
+                                                        <img
+                                                            src={src}
+                                                            alt=""
+                                                            className={cn(
+                                                                "h-full w-full object-cover",
+                                                                willDestroy ? "opacity-40 grayscale" : "opacity-100"
+                                                            )}
+                                                        />
+                                                        <span
+                                                            className={cn(
+                                                                "absolute right-2 top-2 inline-flex items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-extrabold",
+                                                                willDestroy
+                                                                    ? "bg-rose-600 text-white"
+                                                                    : "bg-black/55 text-white"
+                                                            )}
+                                                        >
+                                                            <Trash2 size={12} /> {willDestroy ? "Removed" : "Remove"}
+                                                        </span>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : null}
+
                                 <input
                                     type="file"
                                     multiple
@@ -372,16 +495,29 @@ export default function ProductFormModal({
                                     className="mt-1 block w-full text-xs font-semibold text-(--text-muted) file:mr-3 file:rounded-xl file:border-0 file:bg-(--surface-2) file:px-3 file:py-2 file:text-xs file:font-extrabold file:text-(--text) hover:file:bg-(--surface)"
                                 />
 
-                                {form.imagesPreview?.length ? (
-                                    <div className="mt-3 grid grid-cols-3 gap-2">
-                                        {form.imagesPreview.slice(0, 6).map((src) => (
-                                            <div
-                                                key={src}
-                                                className="aspect-square overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2)"
-                                            >
-                                                <img src={src} alt="" className="h-full w-full object-cover" />
-                                            </div>
-                                        ))}
+                                {newImagesPreview.length ? (
+                                    <div className="mt-3">
+                                        <div className="text-[11px] font-extrabold text-(--text-muted)">
+                                            New images (click trash to remove)
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-3 gap-2">
+                                            {newImagesPreview.slice(0, 6).map((src, idx) => (
+                                                <div
+                                                    key={src}
+                                                    className="relative aspect-square overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2)"
+                                                >
+                                                    <img src={src} alt="" className="h-full w-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeNewImageAt(idx)}
+                                                        className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-xl bg-black/55 px-2 py-1 text-[10px] font-extrabold text-white hover:bg-black/65"
+                                                        title="Remove"
+                                                    >
+                                                        <Trash2 size={12} /> Remove
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ) : null}
                             </div>

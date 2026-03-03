@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as auth from "../controllers/auth.controller";
 import { authMiddleWare } from "../middleware/auth.middleware";
+import { roleChecker } from "../middleware/roleChecker.middleware";
 import multer from "multer";
 import { asyncHandler } from "../utils/asyncHandler";
 import { rateLimit } from "../utils/rateLimit";
@@ -49,11 +50,25 @@ router.get("/profile", authMiddleWare, asyncHandler(auth.getProfile));
 
 router.post("/refreshtoken", asyncHandler(auth.refreshToken));
 
+router.get(
+  "/all-users",
+  authMiddleWare,
+  roleChecker("admin", "stuff"),
+  asyncHandler(auth.getAllUsers),
+);
+
 router.put(
   "/profile",
   authMiddleWare,
   upload.single("avatar"),
   asyncHandler(auth.updateProfile),
+);
+
+router.put(
+  "/update-role/:id",
+  authMiddleWare,
+  roleChecker("admin"),
+  asyncHandler(auth.updateRole),
 );
 
 export default router;
