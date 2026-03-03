@@ -6,7 +6,7 @@ import {
 } from "../services/CloudinaryServices";
 import { successResponse } from "../utils/successResponse";
 import { CategoryModel } from "../models/category.model";
-import { productModel } from "../models/product.model";
+import { productModel, type Size } from "../models/product.model";
 import { generateUniqueSlug } from "../utils/generateSlug";
 import {
   delCache,
@@ -107,7 +107,7 @@ export const createProduct: RequestHandler = async (req, res) => {
     return {
       sku,
       color,
-      sizes: String(sizes),
+      sizes: String(sizes) as Size,
       stock,
     };
   });
@@ -369,7 +369,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
       return {
         sku,
         color,
-        sizes: String(sizes),
+        sizes: String(sizes) as Size,
         stock,
       };
     });
