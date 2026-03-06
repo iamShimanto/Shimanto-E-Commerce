@@ -430,3 +430,18 @@ export const updateRole: RequestHandler = async (req, res) => {
 
   return successResponse(res, "User Role Updated", 200, user);
 };
+
+export const changePassword: RequestHandler = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "Current and new password are required");
+  }
+
+  const user = await UserModel.findById(req.user._id);
+  if (!user) throw new ApiError(400, "Invalid Request");
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) throw new ApiError(400, "Current password is incorrect");
+  user.password = newPassword;
+  await user.save();
+  return successResponse(res, "Password changed successfully", 200);
+};

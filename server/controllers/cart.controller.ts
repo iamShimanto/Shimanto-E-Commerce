@@ -65,3 +65,5 @@ export const addToCart: RequestHandler = async (req, res) => {
   await delCache(cacheKey);
   return successResponse(res, "Product added to cart", 201);
 };
+
+export const getCart: RequestHandler = async (req, res) => {};
