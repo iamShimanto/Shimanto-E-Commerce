@@ -57,6 +57,15 @@ router.get(
   asyncHandler(auth.getAllUsers),
 );
 
+router.get(
+  "/user/:id",
+  authMiddleWare,
+  roleChecker("admin", "stuff"),
+  asyncHandler(auth.getUserById),
+);
+
+router.put("/verify-user/:id", authMiddleWare, roleChecker("admin"), asyncHandler(auth.verifyUser));
+
 router.put(
   "/profile",
   authMiddleWare,
@@ -71,6 +80,10 @@ router.put(
   asyncHandler(auth.updateRole),
 );
 
-router.put("/change-password", authMiddleWare, asyncHandler(auth.changePassword));
+router.put(
+  "/change-password",
+  authMiddleWare,
+  asyncHandler(auth.changePassword),
+);
 
 export default router;

@@ -1,11 +1,9 @@
 import { Navigate, useLocation } from "react-router"
 import { useProfileQuery } from "../../api/auth/authApi"
 
-export default function RequireAuth({ children }) {
+export default function RequireRole({ roles = [], children, fallbackPath = "/" }) {
     const location = useLocation()
-    const { data: user, isLoading, isError, error } = useProfileQuery(undefined, {
-        refetchOnMountOrArgChange: true,
-    })
+    const { data: user, isLoading } = useProfileQuery()
 
     if (isLoading) {
         return (
@@ -18,25 +16,18 @@ export default function RequireAuth({ children }) {
         )
     }
 
-    if (isError && error?.status === 401) {
-        return <Navigate to="/login" replace state={{ from: location }} />
-    }
-
-    if (!user) {
-        return <Navigate to="/login" replace state={{ from: location }} />
-    }
-
     const role = String(user?.role || "").toLowerCase()
+    const allowed = roles.map((r) => String(r).toLowerCase())
 
-    if (role !== "admin" && role !== "stuff") {
+    if (!allowed.includes(role)) {
         return (
             <Navigate
-                to="/login"
+                to={fallbackPath}
                 replace
                 state={{
                     from: location,
                     unauthorized: true,
-                    message: "Only admin or stuff can access this dashboard.",
+                    message: "You are not allowed to access this page.",
                 }}
             />
         )

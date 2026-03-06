@@ -44,14 +44,14 @@ export default function Login() {
 
   useEffect(() => {
     if (!user) return
-    if (user?.role === "admin") {
+    if (user?.role === "admin" || user?.role === "stuff") {
       navigate("/", { replace: true })
       return
     }
 
     if (!unauthorizedToastShownRef.current) {
       unauthorizedToastShownRef.current = true
-      toast.error("Unauthorized", "Only admin can access this dashboard.")
+      toast.error("Unauthorized", "Only admin or stuff can access this dashboard.")
     }
   }, [user, navigate, toast])
 
@@ -62,7 +62,7 @@ export default function Login() {
     unauthorizedToastShownRef.current = true
     toast.error(
       "Unauthorized",
-      location.state?.message || "Only admin can access this dashboard."
+      location.state?.message || "Only admin or stuff can access this dashboard."
     )
 
     navigate("/login", {
@@ -80,7 +80,7 @@ export default function Login() {
       const profileResult = await refetchProfile()
       const role = profileResult?.data?.role
 
-      if (role !== "admin") {
+      if (role !== "admin" && role !== "stuff") {
         try {
           await triggerLogout().unwrap()
         } catch {
@@ -89,7 +89,7 @@ export default function Login() {
           dispatch(authApi.util.resetApiState())
         }
 
-        toast.error("Unauthorized", "Only admin can access this dashboard.")
+        toast.error("Unauthorized", "Only admin or stuff can access this dashboard.")
         return
       }
 

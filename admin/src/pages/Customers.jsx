@@ -2,17 +2,25 @@ import { useMemo, useState } from "react"
 import {
     ChevronLeft,
     ChevronRight,
+    CircleCheck,
     Mail,
     Phone,
     Search,
     UserRound,
 } from "lucide-react"
 
-import { useGetUsersQuery, useProfileQuery, useUpdateRoleMutation } from "../api/auth/authApi"
+import {
+    useGetUserByIdQuery,
+    useGetUsersQuery,
+    useProfileQuery,
+    useUpdateRoleMutation,
+    useVerifyUserMutation,
+} from "../api/auth/authApi"
 import { useToast } from "../hooks/useToast"
 import { cn } from "../lib/cn"
 
 import Button from "../components/ui/Button"
+import Modal from "../components/ui/Modal"
 import Select from "../components/ui/Select"
 
 function formatDate(value) {
@@ -37,13 +45,23 @@ export default function Customers() {
     const [verified, setVerified] = useState("all")
     const [hasAvatar, setHasAvatar] = useState("all")
     const [page, setPage] = useState(1)
+    const [detailsOpen, setDetailsOpen] = useState(false)
+    const [detailsUserId, setDetailsUserId] = useState(null)
     const pageSize = 10
 
     const { data: profile } = useProfileQuery()
     const isAdmin = String(profile?.role || "").toLowerCase() === "admin"
 
     const [updateRole, { isLoading: isUpdatingRole }] = useUpdateRoleMutation()
+    const [verifyUser, { isLoading: isVerifyingUser }] = useVerifyUserMutation()
     const [draftRoles, setDraftRoles] = useState({})
+
+    const {
+        data: selectedUser,
+        isFetching: isFetchingSelectedUser,
+        isError: isSelectedUserError,
+        error: selectedUserError,
+    } = useGetUserByIdQuery(detailsUserId, { skip: !detailsUserId })
 
     const {
         data,
@@ -71,6 +89,22 @@ export default function Customers() {
         error?.data?.message ||
         (typeof error?.error === "string" ? error.error : null) ||
         "Failed to load customers"
+
+    const selectedUserErrorText =
+        selectedUserError?.data?.message ||
+        (typeof selectedUserError?.error === "string" ? selectedUserError.error : null) ||
+        "Failed to load customer details"
+
+    const openDetails = (id) => {
+        if (!id) return
+        setDetailsUserId(id)
+        setDetailsOpen(true)
+    }
+
+    const closeDetails = () => {
+        setDetailsOpen(false)
+        setDetailsUserId(null)
+    }
 
     return (
         <div className="space-y-5">
@@ -183,12 +217,13 @@ export default function Customers() {
                                 <Th>Role</Th>
                                 <Th>Verified</Th>
                                 <Th>Joined</Th>
+                                <Th className="text-right">Actions</Th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-10 text-center">
+                                    <td colSpan={7} className="px-5 py-10 text-center">
                                         <div className="text-sm font-extrabold">Loading customers…</div>
                                     </td>
                                 </tr>
@@ -306,12 +341,24 @@ export default function Customers() {
                                                     {formatDate(u?.createdAt)}
                                                 </div>
                                             </Td>
+
+                                            <Td className="text-right">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    onClick={() => openDetails(id)}
+                                                    disabled={!id}
+                                                >
+                                                    Details
+                                                </Button>
+                                            </Td>
                                         </tr>
                                     )
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-10 text-center">
+                                    <td colSpan={7} className="px-5 py-10 text-center">
                                         <div className="mx-auto max-w-md">
                                             <div className="text-sm font-extrabold">No customers found</div>
                                             <div className="mt-1 text-sm font-semibold text-(--text-muted)">
@@ -357,6 +404,100 @@ export default function Customers() {
                     Fetching customers…
                 </div>
             ) : null}
+
+            <Modal
+                open={detailsOpen}
+                onClose={closeDetails}
+                title="Customer details"
+                description={detailsUserId ? `User ID: ${detailsUserId}` : ""}
+            >
+                {isFetchingSelectedUser ? (
+                    <div className="text-sm font-semibold text-(--text-muted)">Loading details…</div>
+                ) : isSelectedUserError ? (
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
+                        {selectedUserErrorText}
+                    </div>
+                ) : selectedUser ? (
+                    <div className="space-y-5">
+                        <div className="flex items-center gap-3">
+                            <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2)">
+                                {selectedUser?.avatar ? (
+                                    <img src={selectedUser.avatar} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="text-sm font-extrabold text-(--text-muted)">
+                                        {initials(selectedUser?.fullName || selectedUser?.email)}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="min-w-0">
+                                <div className="truncate text-base font-extrabold">
+                                    {selectedUser?.fullName?.trim() || "Unnamed"}
+                                </div>
+                                <div className="truncate text-sm font-semibold text-(--text-muted)">
+                                    {selectedUser?.email || "—"}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <DetailItem label="Phone" value={selectedUser?.phone ? String(selectedUser.phone) : "—"} />
+                            <DetailItem label="Role" value={selectedUser?.role || "user"} />
+                            <DetailItem
+                                label="Verification"
+                                value={selectedUser?.isVerified ? "Verified" : "Pending"}
+                                valueClassName={selectedUser?.isVerified ? "text-emerald-600" : "text-amber-600"}
+                            />
+                            <DetailItem label="Joined" value={formatDate(selectedUser?.createdAt)} />
+                            <DetailItem label="Address" value={selectedUser?.address || "—"} className="sm:col-span-2" />
+                        </div>
+
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <Button type="button" variant="secondary" onClick={closeDetails}>
+                                Close
+                            </Button>
+
+                            {isAdmin && !selectedUser?.isVerified ? (
+                                <Button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!detailsUserId) return
+                                        try {
+                                            await verifyUser(detailsUserId).unwrap()
+                                            toast.success("Verified", "User verified successfully")
+                                        } catch (err) {
+                                            const msg =
+                                                err?.data?.message ||
+                                                (typeof err?.error === "string" ? err.error : null) ||
+                                                "Verification failed"
+                                            toast.error("Error", msg)
+                                        }
+                                    }}
+                                    disabled={isVerifyingUser}
+                                >
+                                    <CircleCheck size={16} />
+                                    {isVerifyingUser ? "Verifying…" : "Verify user"}
+                                </Button>
+                            ) : null}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-sm font-semibold text-(--text-muted)">No user selected</div>
+                )}
+            </Modal>
+        </div>
+    )
+}
+
+function DetailItem({ label, value, className, valueClassName }) {
+    return (
+        <div className={cn("rounded-2xl border border-(--border) bg-(--surface-2) p-3", className)}>
+            <div className="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+                {label}
+            </div>
+            <div className={cn("mt-1 text-sm font-extrabold text-(--text)", valueClassName)}>
+                {value}
+            </div>
         </div>
     )
 }
