@@ -4,8 +4,11 @@ import { Navigate, Route, Routes } from "react-router"
 
 const Layout = lazy(() => import("./components/layout/Index"))
 const RequireAuth = lazy(() => import("./components/auth/RequireAuth"))
+const RequireRole = lazy(() => import("./components/auth/RequireRole"))
 
+const DashboardEntry = lazy(() => import("./pages/DashboardEntry"))
 const DashboardHome = lazy(() => import("./pages/DashboardHome"))
+const StuffDashboard = lazy(() => import("./pages/StuffDashboard"))
 const Orders = lazy(() => import("./pages/Orders"))
 const Products = lazy(() => import("./pages/Products"))
 const Categories = lazy(() => import("./pages/Categories"))
@@ -42,14 +45,58 @@ export default function App() {
               </RequireAuth>
             }
           >
-            <Route index element={<DashboardHome />} />
+            <Route index element={<DashboardEntry />} />
+
+            <Route
+              path="admin-dashboard"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <DashboardHome />
+                </RequireRole>
+              }
+            />
+
+            <Route
+              path="stuff-dashboard"
+              element={
+                <RequireRole roles={["stuff"]}>
+                  <StuffDashboard />
+                </RequireRole>
+              }
+            />
+
             <Route path="orders" element={<Orders />} />
             <Route path="products" element={<Products />} />
             <Route path="categories" element={<Categories />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="cart" element={<Cart />} />
+
+            <Route
+              path="customers"
+              element={
+                <RequireRole roles={["admin", "stuff"]}>
+                  <Customers />
+                </RequireRole>
+              }
+            />
+
+            <Route
+              path="cart"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <Cart />
+                </RequireRole>
+              }
+            />
+
             <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
+
+            <Route
+              path="settings"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <Settings />
+                </RequireRole>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

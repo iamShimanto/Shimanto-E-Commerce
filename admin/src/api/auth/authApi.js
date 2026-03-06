@@ -107,6 +107,23 @@ export const authApi = createApi({
         body: { currentPassword, newPassword },
       }),
     }),
+    getUserById: builder.query({
+      query: (id) => ({
+        url: `/api/v1/auth/user/${id}`,
+        method: "GET",
+      }),
+      transformResponse: (response) => response?.data ?? null,
+      providesTags: (result, error, id) =>
+        result ? [{ type: "Users", id }] : [],
+    }),
+    verifyUser: builder.mutation({
+      query: (id) => ({
+        url: `/api/v1/auth/verify-user/${id}`,
+        method: "PUT",
+      }),
+      invalidatesTags: (result, error, id) =>
+        error ? [] : [{ type: "Users", id }],
+    }),
   }),
 });
 
@@ -118,4 +135,6 @@ export const {
   useGetUsersQuery,
   useUpdateRoleMutation,
   useChangePasswordMutation,
+  useGetUserByIdQuery,
+  useVerifyUserMutation,
 } = authApi;

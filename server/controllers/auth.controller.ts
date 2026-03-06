@@ -402,6 +402,34 @@ export const getAllUsers: RequestHandler = async (req, res) => {
   });
 };
 
+export const getUserById: RequestHandler = async (req, res) => {
+  const id = String((req.params as any).id);
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid user id");
+  }
+
+  const user = await UserModel.findById(id).select("-password -__v");
+  if (!user) throw new ApiError(404, "User not found");
+
+  return successResponse(res, "User fetched", 200, user);
+};
+
+export const verifyUser: RequestHandler = async (req, res) => {
+  const id = String((req.params as any).id);
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid user id");
+  }
+
+  const user = await UserModel.findByIdAndUpdate(
+    id,
+    { $set: { isVerified: true } },
+    { new: true },
+  ).select("-password -__v");
+  if (!user) throw new ApiError(404, "User not found");
+
+  return successResponse(res, "User verified successfully", 200, user);
+};
+
 export const updateRole: RequestHandler = async (req, res) => {
   const id = String((req.params as any).id);
 

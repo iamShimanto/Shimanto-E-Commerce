@@ -20,8 +20,8 @@ import Button from "../ui/Button"
 import { useToast } from "../../hooks/useToast"
 import { authApi, useLogoutMutation, useProfileQuery } from "../../api/auth/authApi"
 
-const navItems = [
-    { to: "/", label: "Dashboard", Icon: LayoutDashboard, end: true },
+const adminNavItems = [
+    { to: "/admin-dashboard", label: "Dashboard", Icon: LayoutDashboard },
     { to: "/orders", label: "Orders", Icon: ClipboardList },
     { to: "/products", label: "Products", Icon: Boxes },
     { to: "/categories", label: "Categories", Icon: BarChart3 },
@@ -29,6 +29,15 @@ const navItems = [
     { to: "/cart", label: "Cart", Icon: ShoppingCart },
     { to: "/profile", label: "Profile", Icon: User },
     { to: "/settings", label: "Settings", Icon: Settings },
+]
+
+const stuffNavItems = [
+    { to: "/stuff-dashboard", label: "Dashboard", Icon: LayoutDashboard },
+    { to: "/orders", label: "Orders", Icon: ClipboardList },
+    { to: "/products", label: "Products", Icon: Boxes },
+    { to: "/categories", label: "Categories", Icon: BarChart3 },
+    { to: "/customers", label: "Customers", Icon: Users },
+    { to: "/profile", label: "Profile", Icon: User },
 ]
 
 function SidebarLink({ to, label, Icon: NavIcon, end, onNavigate }) {
@@ -63,7 +72,11 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
     const { data: user } = useProfileQuery()
     const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation()
 
-    const displayName = user?.fullName || "Admin"
+    const role = String(user?.role || "").toLowerCase()
+    const isStuff = role === "stuff"
+    const navItems = isStuff ? stuffNavItems : adminNavItems
+
+    const displayName = user?.fullName || (isStuff ? "Stuff" : "Admin")
     const displayEmail = user?.email || "contact@shimanto.dev"
 
     const onLogout = async () => {
@@ -95,7 +108,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                         </div>
                         <div className="min-w-0">
                             <div className="truncate text-lg font-extrabold tracking-tight">
-                                Admin
+                                {isStuff ? "Stuff" : "Admin"}
                             </div>
                             <div className="truncate text-xs font-medium text-(--text-muted)">
                                 Dashboard
@@ -173,7 +186,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                                 </div>
                                 <div className="min-w-0">
                                     <div className="truncate text-sm font-extrabold tracking-tight">
-                                        Shimanto Admin
+                                        {isStuff ? "Shimanto Stuff" : "Shimanto Admin"}
                                     </div>
                                     <div className="truncate text-xs font-medium text-(--text-muted)">
                                         Dashboard
