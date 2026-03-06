@@ -5,5 +5,7 @@ import * as cart from "../controllers/cart.controller";
 const router = Router();
 
 router.post("/add", asyncHandler(cart.addToCart));
+router.get("/", asyncHandler(cart.getCart));
+
 
 export default router;

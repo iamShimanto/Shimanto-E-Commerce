@@ -100,6 +100,13 @@ export const authApi = createApi({
               ...(arg?.id ? [{ type: "Users", id: arg.id }] : []),
             ],
     }),
+    changePassword: builder.mutation({
+      query: ({ currentPassword, newPassword }) => ({
+        url: "/api/v1/auth/change-password",
+        method: "PUT",
+        body: { currentPassword, newPassword },
+      }),
+    }),
   }),
 });
 
@@ -110,4 +117,5 @@ export const {
   useUpdateProfileMutation,
   useGetUsersQuery,
   useUpdateRoleMutation,
+  useChangePasswordMutation,
 } = authApi;

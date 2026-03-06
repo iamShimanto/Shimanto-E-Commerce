@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useToast } from "../hooks/useToast"
-import { Camera, Mail, Phone, Shield } from "lucide-react"
+import { Camera, Eye, EyeOff, KeyRound, Lock, Mail, Phone, Shield } from "lucide-react"
 
 import Button from "../components/ui/Button"
 import Field from "../components/ui/Field"
 import Input from "../components/ui/Input"
+import Modal from "../components/ui/Modal"
 import Textarea from "../components/ui/Textarea"
-import { useProfileQuery, useUpdateProfileMutation } from "../api/auth/authApi"
+import {
+    useChangePasswordMutation,
+    useProfileQuery,
+    useUpdateProfileMutation,
+} from "../api/auth/authApi"
 
 function initialsFromName(name) {
     if (!name) return "U"
@@ -23,13 +28,50 @@ export default function Profile() {
     })
     const [triggerUpdateProfile, { isLoading: isUpdating }] =
         useUpdateProfileMutation()
+    const [triggerChangePassword, { isLoading: isChangingPassword }] =
+        useChangePasswordMutation()
 
     const fileInputRef = useRef(null)
     const [avatarFile, setAvatarFile] = useState(null)
 
     const [draft, setDraft] = useState(null)
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+    const [showPasswords, setShowPasswords] = useState(false)
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    })
 
     const isSaving = isUpdating
+
+    const passwordErrors = useMemo(() => {
+        const next = {}
+
+        if (!passwordForm.currentPassword.trim()) {
+            next.currentPassword = "Current password is required"
+        }
+
+        if (!passwordForm.newPassword.trim()) {
+            next.newPassword = "New password is required"
+        } else if (passwordForm.newPassword.trim().length < 6) {
+            next.newPassword = "Password must be at least 6 characters"
+        }
+
+        if (!passwordForm.confirmPassword.trim()) {
+            next.confirmPassword = "Please confirm your new password"
+        } else if (passwordForm.confirmPassword !== passwordForm.newPassword) {
+            next.confirmPassword = "Passwords do not match"
+        }
+
+        return next
+    }, [passwordForm.confirmPassword, passwordForm.currentPassword, passwordForm.newPassword])
+
+    const canSubmitPassword =
+        Boolean(passwordForm.currentPassword) &&
+        Boolean(passwordForm.newPassword) &&
+        Boolean(passwordForm.confirmPassword) &&
+        Object.keys(passwordErrors).length === 0
 
     const displayName = user?.fullName || "Admin"
     const initials = useMemo(() => initialsFromName(displayName), [displayName])
@@ -96,6 +138,47 @@ export default function Profile() {
         if (fileInputRef.current) fileInputRef.current.value = ""
     }
 
+    const resetPasswordModal = () => {
+        setPasswordForm({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+        })
+        setShowPasswords(false)
+    }
+
+    const closePasswordModal = () => {
+        setPasswordModalOpen(false)
+        resetPasswordModal()
+    }
+
+    const onSubmitPassword = async (e) => {
+        e.preventDefault()
+
+        if (!canSubmitPassword) {
+            toast.error("Validation", "Please fill all required password fields correctly")
+            return
+        }
+
+        try {
+            await triggerChangePassword({
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword,
+            }).unwrap()
+
+            toast.success("Success", "Password changed successfully")
+            closePasswordModal()
+        } catch (error) {
+            const message =
+                error?.data?.message ||
+                error?.data?.error ||
+                (typeof error === "string" ? error : null) ||
+                "Failed to change password"
+
+            toast.error("Change failed", message)
+        }
+    }
+
     const onSubmit = async (e) => {
         e.preventDefault()
 
@@ -106,7 +189,7 @@ export default function Profile() {
                 address: values.address,
                 avatar: avatarFile,
             }).unwrap()
-            toast.success("Success","Profile updated")
+            toast.success("Success", "Profile updated")
             setAvatarFile(null)
             if (fileInputRef.current) fileInputRef.current.value = ""
         } catch (error) {
@@ -129,172 +212,285 @@ export default function Profile() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <div className="text-lg font-extrabold tracking-tight">Profile</div>
-                    <div className="text-sm font-semibold text-(--text-muted)">
-                        Manage your account details and preferences.
+        <>
+            <div className="space-y-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <div className="text-lg font-extrabold tracking-tight">Profile</div>
+                        <div className="text-sm font-semibold text-(--text-muted)">
+                            Manage your account details and preferences.
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            onClick={() => setPasswordModalOpen(true)}
+                        >
+                            <KeyRound size={16} /> Change password
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            onClick={discard}
+                            disabled={isSaving || !hasChanges}
+                        >
+                            Discard
+                        </Button>
+                        <Button
+                            size="sm"
+                            type="submit"
+                            form="profileForm"
+                            disabled={isSaving || !hasChanges}
+                        >
+                            {isSaving ? "Saving…" : "Save changes"}
+                        </Button>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        type="button"
-                        onClick={discard}
-                        disabled={isSaving || !hasChanges}
-                    >
-                        Discard
-                    </Button>
-                    <Button
-                        size="sm"
-                        type="submit"
-                        form="profileForm"
-                        disabled={isSaving || !hasChanges}
-                    >
-                        {isSaving ? "Saving…" : "Save changes"}
-                    </Button>
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                {avatarPreviewUrl || user?.avatar ? (
+                                    <img
+                                        src={avatarPreviewUrl || user?.avatar}
+                                        alt={displayName}
+                                        className="h-18 w-18 rounded-3xl object-cover ring-1 ring-(--border)"
+                                    />
+                                ) : (
+                                    <div className="grid h-18 w-18 place-items-center rounded-3xl bg-(--surface-2) text-lg font-extrabold ring-1 ring-(--border)">
+                                        {initials}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-2xl border border-(--border) bg-(--surface) text-(--text-muted) shadow-sm transition hover:bg-(--surface-2) hover:text-(--text)"
+                                    aria-label="Change profile photo"
+                                >
+                                    <Camera size={18} />
+                                </button>
+
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={onPickAvatar}
+                                />
+                            </div>
+
+                            <div className="min-w-0">
+                                <div className="truncate text-base font-extrabold tracking-tight">
+                                    {displayName}
+                                </div>
+                                <div className="truncate text-sm font-semibold text-(--text-muted)">
+                                    {user?.email || ""}
+                                </div>
+                                <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--surface-2) px-3 py-1.5 text-xs font-extrabold text-(--text-muted)">
+                                    <Shield size={14} />
+                                    {String(user?.role || "admin").toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-5 space-y-3">
+                            <div className="flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
+                                <Mail size={16} className="text-(--text-muted)" />
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-extrabold text-(--text-muted)">
+                                        Email
+                                    </div>
+                                    <div className="truncate text-sm font-semibold">{user?.email || "—"}</div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
+                                <Phone size={16} className="text-(--text-muted)" />
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-extrabold text-(--text-muted)">
+                                        Phone
+                                    </div>
+                                    <div className="truncate text-sm font-semibold">{user?.phone || "—"}</div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-dashed border-(--border) bg-(--surface-2) p-4">
+                                <div className="text-xs font-extrabold">Tips</div>
+                                <div className="mt-1 text-xs font-semibold text-(--text-muted)">
+                                    Use a clear profile photo and keep your contact info updated.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-sm lg:col-span-2">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-extrabold">Account details</div>
+                                <div className="mt-0.5 text-xs font-semibold text-(--text-muted)">
+                                    These details are used across the admin dashboard.
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="profileForm" onSubmit={onSubmit} className="mt-5">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Full name">
+                                    <Input
+                                        placeholder="Your name"
+                                        value={values.fullName}
+                                        onChange={(e) => setField("fullName", e.target.value)}
+                                    />
+                                </Field>
+
+                                <Field label="Email">
+                                    <Input value={user?.email || ""} disabled readOnly />
+                                </Field>
+
+                                <Field label="Phone">
+                                    <Input
+                                        placeholder="e.g. 017XXXXXXXX"
+                                        value={values.phone}
+                                        onChange={(e) => setField("phone", e.target.value)}
+                                    />
+                                </Field>
+
+                                <Field label="Role">
+                                    <Input value={String(user?.role || "admin")} disabled readOnly />
+                                </Field>
+                            </div>
+
+                            <div className="mt-4">
+                                <Field label="Address">
+                                    <Textarea
+                                        placeholder="Office / shipping address"
+                                        value={values.address}
+                                        onChange={(e) => setField("address", e.target.value)}
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
+                                <div className="text-xs font-semibold text-(--text-muted)">
+                                    Changes are saved to your admin account profile.
+                                </div>
+                                <Button type="submit" size="sm" disabled={isSaving || !hasChanges}>
+                                    {isSaving ? "Saving…" : "Save changes"}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            {avatarPreviewUrl || user?.avatar ? (
-                                <img
-                                    src={avatarPreviewUrl || user?.avatar}
-                                    alt={displayName}
-                                    className="h-18 w-18 rounded-3xl object-cover ring-1 ring-(--border)"
-                                />
-                            ) : (
-                                <div className="grid h-18 w-18 place-items-center rounded-3xl bg-(--surface-2) text-lg font-extrabold ring-1 ring-(--border)">
-                                    {initials}
+            <Modal
+                open={passwordModalOpen}
+                title="Change password"
+                description="Update your account password with a strong new one."
+                onClose={closePasswordModal}
+            >
+                <div className="mx-auto max-w-xl">
+                    <div className="mb-4 rounded-2xl border border-(--border) bg-(--surface-2) p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 grid h-9 w-9 place-items-center rounded-xl border border-(--border) bg-(--surface)">
+                                <Lock size={16} className="text-(--text-muted)" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-extrabold">Security tip</div>
+                                <div className="mt-1 text-xs font-semibold text-(--text-muted)">
+                                    Use at least 6 characters with a mix of uppercase, lowercase,
+                                    numbers, and symbols.
                                 </div>
-                            )}
+                            </div>
+                        </div>
+                    </div>
 
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-2xl border border-(--border) bg-(--surface) text-(--text-muted) shadow-sm transition hover:bg-(--surface-2) hover:text-(--text)"
-                                aria-label="Change profile photo"
-                            >
-                                <Camera size={18} />
-                            </button>
-
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={onPickAvatar}
+                    <form onSubmit={onSubmitPassword} className="space-y-3">
+                        <Field label="Current password" error={passwordErrors.currentPassword}>
+                            <Input
+                                type={showPasswords ? "text" : "password"}
+                                value={passwordForm.currentPassword}
+                                onChange={(e) =>
+                                    setPasswordForm((prev) => ({
+                                        ...prev,
+                                        currentPassword: e.target.value,
+                                    }))
+                                }
+                                placeholder="Enter current password"
+                                aria-invalid={Boolean(passwordErrors.currentPassword)}
                             />
-                        </div>
+                        </Field>
 
-                        <div className="min-w-0">
-                            <div className="truncate text-base font-extrabold tracking-tight">
-                                {displayName}
-                            </div>
-                            <div className="truncate text-sm font-semibold text-(--text-muted)">
-                                {user?.email || ""}
-                            </div>
-                            <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--surface-2) px-3 py-1.5 text-xs font-extrabold text-(--text-muted)">
-                                <Shield size={14} />
-                                {String(user?.role || "admin").toUpperCase()}
-                            </div>
-                        </div>
-                    </div>
+                        <Field label="New password" error={passwordErrors.newPassword}>
+                            <Input
+                                type={showPasswords ? "text" : "password"}
+                                value={passwordForm.newPassword}
+                                onChange={(e) =>
+                                    setPasswordForm((prev) => ({
+                                        ...prev,
+                                        newPassword: e.target.value,
+                                    }))
+                                }
+                                placeholder="Enter new password"
+                                aria-invalid={Boolean(passwordErrors.newPassword)}
+                            />
+                        </Field>
 
-                    <div className="mt-5 space-y-3">
-                        <div className="flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
-                            <Mail size={16} className="text-(--text-muted)" />
-                            <div className="min-w-0">
-                                <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                    Email
-                                </div>
-                                <div className="truncate text-sm font-semibold">{user?.email || "—"}</div>
-                            </div>
-                        </div>
+                        <Field label="Confirm new password" error={passwordErrors.confirmPassword}>
+                            <Input
+                                type={showPasswords ? "text" : "password"}
+                                value={passwordForm.confirmPassword}
+                                onChange={(e) =>
+                                    setPasswordForm((prev) => ({
+                                        ...prev,
+                                        confirmPassword: e.target.value,
+                                    }))
+                                }
+                                placeholder="Re-enter new password"
+                                aria-invalid={Boolean(passwordErrors.confirmPassword)}
+                            />
+                        </Field>
 
-                        <div className="flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
-                            <Phone size={16} className="text-(--text-muted)" />
-                            <div className="min-w-0">
-                                <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                    Phone
-                                </div>
-                                <div className="truncate text-sm font-semibold">{user?.phone || "—"}</div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-dashed border-(--border) bg-(--surface-2) p-4">
-                            <div className="text-xs font-extrabold">Tips</div>
-                            <div className="mt-1 text-xs font-semibold text-(--text-muted)">
-                                Use a clear profile photo and keep your contact info updated.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-sm lg:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <div className="text-sm font-extrabold">Account details</div>
-                            <div className="mt-0.5 text-xs font-semibold text-(--text-muted)">
-                                These details are used across the admin dashboard.
-                            </div>
-                        </div>
-                    </div>
-
-                    <form id="profileForm" onSubmit={onSubmit} className="mt-5">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="Full name">
-                                <Input
-                                    placeholder="Your name"
-                                    value={values.fullName}
-                                    onChange={(e) => setField("fullName", e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="Email">
-                                <Input value={user?.email || ""} disabled readOnly />
-                            </Field>
-
-                            <Field label="Phone">
-                                <Input
-                                    placeholder="e.g. 017XXXXXXXX"
-                                    value={values.phone}
-                                    onChange={(e) => setField("phone", e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="Role">
-                                <Input value={String(user?.role || "admin")} disabled readOnly />
-                            </Field>
-                        </div>
-
-                        <div className="mt-4">
-                            <Field label="Address">
-                                <Textarea
-                                    placeholder="Office / shipping address"
-                                    value={values.address}
-                                    onChange={(e) => setField("address", e.target.value)}
-                                />
-                            </Field>
-                        </div>
-
-                        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
+                        <div className="flex items-center justify-between rounded-xl border border-(--border) bg-(--surface-2) px-3 py-2">
                             <div className="text-xs font-semibold text-(--text-muted)">
-                                Changes are saved to your admin account profile.
+                                Show password values
                             </div>
-                            <Button type="submit" size="sm" disabled={isSaving || !hasChanges}>
-                                {isSaving ? "Saving…" : "Save changes"}
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setShowPasswords((prev) => !prev)}
+                            >
+                                {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                                {showPasswords ? "Hide" : "Show"}
+                            </Button>
+                        </div>
+
+                        <div className="pt-2 flex flex-wrap justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={closePasswordModal}
+                                disabled={isChangingPassword}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isChangingPassword || !canSubmitPassword}
+                            >
+                                {isChangingPassword ? "Updating…" : "Update password"}
                             </Button>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
+            </Modal>
+        </>
     )
 }

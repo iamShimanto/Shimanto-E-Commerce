@@ -71,4 +71,6 @@ router.put(
   asyncHandler(auth.updateRole),
 );
 
+router.put("/change-password", authMiddleWare, asyncHandler(auth.changePassword));
+
 export default router;
