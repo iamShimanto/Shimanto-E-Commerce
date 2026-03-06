@@ -163,9 +163,26 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const category = req.query.category as string;
   const search = req.query.search as string;
+  const isActiveQuery = req.query.isActive as string | undefined;
   const skip = (page - 1) * limit;
 
-  const cacheKey = `products:list:v1:page=${page}:limit=${limit}:cat=${category || "all"}:q=${search || "none"}`;
+  let isActiveFilter: boolean | undefined = true;
+  if (typeof isActiveQuery !== "undefined") {
+    if (isActiveQuery === "true") {
+      isActiveFilter = true;
+    } else if (isActiveQuery === "false") {
+      isActiveFilter = false;
+    } else if (isActiveQuery === "all") {
+      isActiveFilter = undefined;
+    } else {
+      throw new ApiError(400, "isActive must be true, false or all");
+    }
+  }
+
+  const activeKey =
+    typeof isActiveFilter === "boolean" ? String(isActiveFilter) : "all";
+
+  const cacheKey = `products:list:v1:page=${page}:limit=${limit}:cat=${category || "all"}:q=${search || "none"}:active=${activeKey}`;
 
   const cached = await getCache(cacheKey);
   if (cached) {
@@ -173,7 +190,10 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   }
 
   const pipeline: any[] = [
-    { $match: { isActive: true } },
+    {
+      $match:
+        typeof isActiveFilter === "boolean" ? { isActive: isActiveFilter } : {},
+    },
 
     {
       $lookup: {
@@ -436,6 +456,28 @@ export const updateProduct: RequestHandler = async (req, res) => {
   return successResponse(
     res,
     "Product Updated Successfully",
+    200,
+    existProduct,
+  );
+};
+
+export const toggleFeatured: RequestHandler = async (req, res) => {
+  const { slug } = req.params;
+
+  const existProduct = await productModel.findOne({ slug });
+  if (!existProduct) throw new ApiError(404, "Product not exist");
+  if (!existProduct.isActive)
+    throw new ApiError(400, "Inactive product can't be featured");
+
+  existProduct.isFeatured = !existProduct.isFeatured;
+  await existProduct.save();
+
+  const cacheKey = `product:slug:${slug}`;
+  await delCache(cacheKey);
+  await delCacheByPrefix("products:list:v1:");
+  return successResponse(
+    res,
+    `Product is now ${existProduct.isFeatured ? "featured" : "not featured"}`,
     200,
     existProduct,
   );

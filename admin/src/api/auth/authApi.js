@@ -7,6 +7,7 @@ export const authApi = createApi({
   baseQuery: api,
   tagTypes: ["Auth", "Users"],
   endpoints: (builder) => ({
+    // get user profile
     profile: builder.query({
       query: () => ({
         url: "/api/v1/auth/profile",
@@ -15,7 +16,7 @@ export const authApi = createApi({
       providesTags: ["Auth"],
       transformResponse: (response) => response?.data ?? null,
     }),
-
+    // user login
     login: builder.mutation({
       query: (payload) => ({
         url: "/api/v1/auth/login",
@@ -24,7 +25,7 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["Auth"],
     }),
-
+    // user logout
     logout: builder.mutation({
       query: () => ({
         url: "/api/v1/auth/logout",
@@ -32,7 +33,7 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["Auth"],
     }),
-
+    // update user profile
     updateProfile: builder.mutation({
       query: ({ fullName, phone, address, avatar }) => {
         const formData = new FormData();
@@ -49,6 +50,7 @@ export const authApi = createApi({
       },
       invalidatesTags: ["Auth"],
     }),
+    // get all users 
     getUsers: builder.query({
       query: ({
         page = 1,
@@ -85,7 +87,7 @@ export const authApi = createApi({
             ]
           : [{ type: "Users", id: "LIST" }],
     }),
-
+    // update user role
     updateRole: builder.mutation({
       query: ({ id, role }) => ({
         url: `/api/v1/auth/update-role/${id}`,
@@ -100,6 +102,7 @@ export const authApi = createApi({
               ...(arg?.id ? [{ type: "Users", id: arg.id }] : []),
             ],
     }),
+    // change password
     changePassword: builder.mutation({
       query: ({ currentPassword, newPassword }) => ({
         url: "/api/v1/auth/change-password",
@@ -107,6 +110,7 @@ export const authApi = createApi({
         body: { currentPassword, newPassword },
       }),
     }),
+    // get user by id
     getUserById: builder.query({
       query: (id) => ({
         url: `/api/v1/auth/user/${id}`,
@@ -116,6 +120,7 @@ export const authApi = createApi({
       providesTags: (result, error, id) =>
         result ? [{ type: "Users", id }] : [],
     }),
+    // verify user
     verifyUser: builder.mutation({
       query: (id) => ({
         url: `/api/v1/auth/verify-user/${id}`,

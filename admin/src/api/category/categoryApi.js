@@ -6,6 +6,7 @@ export const categoryApi = createApi({
   baseQuery: api,
   tagTypes: ["Category"],
   endpoints: (builder) => ({
+    // get all categories
     getCategories: builder.query({
       query: () => ({
         url: "/api/v1/category/all",
@@ -14,7 +15,7 @@ export const categoryApi = createApi({
       providesTags: ["Category"],
       transformResponse: (response) => response?.data ?? [],
     }),
-
+    // create new category
     createCategory: builder.mutation({
       query: ({ name, description, thumbnail }) => {
         const formData = new FormData();
@@ -29,7 +30,7 @@ export const categoryApi = createApi({
       },
       invalidatesTags: [{ type: "Category", id: "LIST" }],
     }),
-
+    // update category
     updateCategory: builder.mutation({
       query: ({ slug, name, description, isActive, thumbnail }) => {
         const formData = new FormData();

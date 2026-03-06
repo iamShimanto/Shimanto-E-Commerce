@@ -12,7 +12,7 @@ router.use(
 );
 
 router.get("/", (req, res) => {
-  res.send("Server is running");
+  res.json({ message: "Server is running" });
 });
 
 router.use("/api/v1/auth", authRoute);

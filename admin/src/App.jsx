@@ -11,6 +11,7 @@ const DashboardHome = lazy(() => import("./pages/DashboardHome"))
 const StuffDashboard = lazy(() => import("./pages/StuffDashboard"))
 const Orders = lazy(() => import("./pages/Orders"))
 const Products = lazy(() => import("./pages/Products"))
+const ProductDetails = lazy(() => import("./pages/ProductDetails"))
 const Categories = lazy(() => import("./pages/Categories"))
 const Customers = lazy(() => import("./pages/Customers"))
 const Cart = lazy(() => import("./pages/Cart"))
@@ -67,6 +68,7 @@ export default function App() {
 
             <Route path="orders" element={<Orders />} />
             <Route path="products" element={<Products />} />
+            <Route path="products/:slug" element={<ProductDetails />} />
             <Route path="categories" element={<Categories />} />
 
             <Route

@@ -27,6 +27,7 @@ export interface IProduct {
   images?: string[];
 
   isActive?: boolean;
+  isFeatured?: boolean;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -99,6 +100,10 @@ const productSchema = new Schema<IProduct>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
   },
   {

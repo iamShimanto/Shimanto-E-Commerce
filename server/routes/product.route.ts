@@ -32,4 +32,7 @@ router.put(
   asyncHandler(product.updateProduct),
 );
 
+router.put("/is-featured/:slug", authMiddleWare, roleChecker("admin"), asyncHandler(product.toggleFeatured));
+
+
 export default router;

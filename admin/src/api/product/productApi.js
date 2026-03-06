@@ -6,8 +6,9 @@ export const productApi = createApi({
   baseQuery: api,
   tagTypes: ["Products"],
   endpoints: (builder) => ({
+    // all products
     getProducts: builder.query({
-      query: ({ page = 1, limit = 10, category, search } = {}) => ({
+      query: ({ page = 1, limit = 10, category, search, isActive } = {}) => ({
         url: "/api/v1/product/all",
         method: "GET",
         params: {
@@ -15,6 +16,7 @@ export const productApi = createApi({
           limit,
           ...(category ? { category } : {}),
           ...(search ? { search } : {}),
+          ...(typeof isActive !== "undefined" ? { isActive } : {}),
         },
       }),
       transformResponse: (response) => ({
@@ -32,6 +34,7 @@ export const productApi = createApi({
             ]
           : [{ type: "Products", id: "LIST" }],
     }),
+    // create new product
     createProduct: builder.mutation({
       query: ({
         title,
@@ -66,6 +69,7 @@ export const productApi = createApi({
       },
       invalidatesTags: [{ type: "Products", id: "LIST" }],
     }),
+    // single product details
     getSingleProduct: builder.query({
       query: (slug) => ({
         url: `/api/v1/product/get-single-product/${slug}`,
@@ -73,6 +77,7 @@ export const productApi = createApi({
       }),
       providesTags: ["Products"],
     }),
+    // update product
     updateProduct: builder.mutation({
       query: ({ slug, data }) => {
         const formData = new FormData();
@@ -111,6 +116,14 @@ export const productApi = createApi({
       },
       invalidatesTags: [{ type: "Products", id: "LIST" }],
     }),
+    // toggle featured status
+    toggleFeatured: builder.mutation({
+      query: (slug) => ({
+        url: `/api/v1/product/is-featured/${slug}`,
+        method: "PUT",
+      }),
+      invalidatesTags: [{ type: "Products", id: "LIST" }],
+    }),
   }),
 });
 
@@ -119,4 +132,5 @@ export const {
   useCreateProductMutation,
   useGetSingleProductQuery,
   useUpdateProductMutation,
+  useToggleFeaturedMutation,
 } = productApi;
