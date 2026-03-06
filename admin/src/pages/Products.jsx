@@ -1,22 +1,26 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
     BadgePercent,
     ChevronLeft,
     ChevronRight,
+    Eye,
+    Filter,
+    Layers,
     Package,
     Pencil,
     Plus,
     Search,
-    Trash2,
+    Star,
 } from "lucide-react"
+import { useNavigate } from "react-router"
 
 import { useToast } from "../hooks/useToast"
-import { cn } from "../lib/cn"
 
 import { useGetCategoriesQuery } from "../api/category/categoryApi"
 import {
     useCreateProductMutation,
     useGetProductsQuery,
+    useToggleFeaturedMutation,
     useUpdateProductMutation,
 } from "../api/product/productApi"
 
@@ -33,11 +37,14 @@ import {
 } from "../features/products/productUtils"
 
 export default function Products() {
+    const navigate = useNavigate()
     const toast = useToast()
 
     const [query, setQuery] = useState("")
+    const [debouncedQuery, setDebouncedQuery] = useState("")
     const [status, setStatus] = useState("all")
     const [category, setCategory] = useState("all")
+    const [filtersOpen, setFiltersOpen] = useState(false)
     const [page, setPage] = useState(1)
     const pageSize = 8
 
@@ -60,11 +67,26 @@ export default function Products() {
         page,
         limit: pageSize,
         category: category !== "all" ? category : undefined,
-        search: query.trim() ? query.trim() : undefined,
+        search: debouncedQuery.trim() ? debouncedQuery.trim() : undefined,
+        isActive:
+            status === "active"
+                ? "true"
+                : status === "inactive"
+                    ? "false"
+                    : "all",
     })
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(query)
+        }, 500)
+
+        return () => clearTimeout(timer)
+    }, [query])
 
     const [createProduct, { isLoading: isCreating }] = useCreateProductMutation()
     const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation()
+    const [toggleFeatured, { isLoading: isTogglingFeatured }] = useToggleFeaturedMutation()
 
     const products = useMemo(() => productsResult?.items ?? [], [productsResult])
 
@@ -74,7 +96,7 @@ export default function Products() {
         () => products.find((p) => String(p?._id) === String(editingId)) || null,
         [products, editingId]
     )
-    // initial form value
+    // initial form valuefor
     const initialFormValue = useMemo(() => {
         if (modalMode === "edit" && editingProduct) {
             return {
@@ -126,14 +148,7 @@ export default function Products() {
         }
     }, [modalMode, editingProduct])
 
-    const pageItems = useMemo(() => {
-        if (status === "all") return products
-        return products.filter((p) => {
-            if (status === "active") return Boolean(p?.isActive)
-            if (status === "inactive") return !p?.isActive
-            return true
-        })
-    }, [products, status])
+    const pageItems = useMemo(() => products, [products])
 
     const openCreate = () => {
         setModalMode("create")
@@ -146,6 +161,26 @@ export default function Products() {
         setEditingId(id)
         setModalOpen(true)
     }
+
+    const openDetails = (slug) => {
+        if (!slug) return
+        navigate(`/products/${slug}`)
+    }
+
+    const onToggleFeatured = async (slug) => {
+        if (!slug) return
+        try {
+            await toggleFeatured(slug).unwrap()
+            toast.success("Updated", "Product featured status updated")
+        } catch (err) {
+            const msg =
+                err?.data?.message ||
+                (typeof err?.error === "string" ? err.error : null) ||
+                "Request failed"
+            toast.error("Error", msg)
+        }
+    }
+
     // create and update product
     const onSubmit = async (value) => {
         const payload = {
@@ -230,8 +265,8 @@ export default function Products() {
                 </div>
             ) : null}
 
-            <div className="grid gap-3 lg:grid-cols-12">
-                <div className="lg:col-span-6">
+            <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 rounded-2xl border border-(--border) bg-(--surface) px-3 py-2 shadow-sm">
                         <Search size={16} className="text-(--text-muted)" />
                         <input
@@ -246,176 +281,164 @@ export default function Products() {
                     </div>
                 </div>
 
-                <div className="lg:col-span-3">
-                    <Select
-                        value={status}
-                        onChange={(e) => {
-                            setStatus(e.target.value)
-                            setPage(1)
-                        }}
+                <div className="shrink-0">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setFiltersOpen(true)}
+                        className="rounded-2xl"
                     >
-                        <option value="all">All status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </Select>
-                </div>
-
-                <div className="lg:col-span-3">
-                    <Select
-                        value={category}
-                        onChange={(e) => {
-                            setCategory(e.target.value)
-                            setPage(1)
-                        }}
-                    >
-                        <option value="all">All categories</option>
-                        {categories
-                            .filter((c) => c?._id && c?.name)
-                            .map((c) => (
-                                <option key={c._id} value={c.slug}>
-                                    {c.name}
-                                </option>
-                            ))}
-                    </Select>
+                        <Filter size={16} /> Filters <ChevronLeft size={16} />
+                    </Button>
                 </div>
             </div>
 
             <div className="overflow-hidden rounded-3xl border border-(--border) bg-(--surface) shadow-sm ring-1 ring-black/5">
                 <div className="flex items-center justify-between gap-3 border-b border-(--border) px-5 py-4">
                     <div className="min-w-0">
-                        <div className="truncate text-sm font-extrabold">Product list</div>
+                        <div className="truncate text-sm font-extrabold">Product List</div>
                         <div className="mt-0.5 text-xs font-semibold text-(--text-muted)">
                             {isLoading ? "Loading…" : `${pageItems.length} items`}
                         </div>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 rounded-2xl bg-(--surface-2) px-3 py-2 text-xs font-extrabold text-(--text-muted)">
-                        <BadgePercent size={16} /> Discounts supported
-                    </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-245 w-full">
-                        <thead>
-                            <tr className="bg-(--surface-2)">
-                                <Th>Product</Th>
-                                <Th>Slug</Th>
-                                <Th>Category</Th>
-                                <Th className="text-right">Price</Th>
-                                <Th className="text-right">Stock</Th>
-                                <Th>Status</Th>
-                                <Th className="text-right">Actions</Th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-5 py-10 text-center">
-                                        <div className="text-sm font-extrabold">Loading products…</div>
-                                    </td>
-                                </tr>
-                            ) : pageItems.length ? (
-                                pageItems.map((p) => {
-                                    const totalStock = calcTotalStock(p.variants)
-                                    const final = computeFinalPrice(p.price, p.discountPercentage)
-                                    return (
-                                        <tr
-                                            key={p._id || p.slug}
-                                            className="border-t border-(--border) transition-colors hover:bg-(--surface-2)"
+                {isLoading ? (
+                    <div className="px-5 py-10 text-center">
+                        <div className="text-sm font-extrabold">Loading products…</div>
+                    </div>
+                ) : pageItems.length ? (
+                    <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {pageItems.map((p) => {
+                            const totalStock = calcTotalStock(p.variants)
+                            const final = computeFinalPrice(p.price, p.discountPercentage)
+
+                            return (
+                                <article
+                                    key={p._id || p.slug}
+                                    className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2) shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md"
+                                >
+                                    <div className="relative aspect-16/10 overflow-hidden border-b border-(--border) bg-(--surface)">
+                                        <button
+                                            type="button"
+                                            onClick={() => openDetails(p?.slug)}
+                                            className="h-full w-full cursor-pointer"
                                         >
-                                            <Td>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-(--border) bg-(--surface-2) ring-1 ring-black/5">
-                                                        {p.thumbnail || p.thumbnailPreview ? (
-                                                            <img
-                                                                src={p.thumbnail || p.thumbnailPreview}
-                                                                alt=""
-                                                                className="h-full w-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <Package size={18} className="text-(--text-muted)" />
-                                                        )}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <div className="truncate text-sm font-extrabold">
-                                                            {p.title}
-                                                        </div>
-                                                        <div className="truncate text-xs font-semibold text-(--text-muted)">
-                                                            {p.tags?.length ? p.tags.map((t) => `#${t}`).join(" ") : "No tags"}
-                                                        </div>
-                                                    </div>
+                                            {p.thumbnail || p.thumbnailPreview ? (
+                                                <img
+                                                    src={p.thumbnail || p.thumbnailPreview}
+                                                    alt={p?.title || "Product"}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="grid h-full w-full place-items-center text-(--text-muted)">
+                                                    <Package size={22} />
                                                 </div>
-                                            </Td>
+                                            )}
+                                        </button>
 
-                                            <Td>
-                                                <div className="text-sm font-extrabold">{p?.slug}</div>
-                                            </Td>
-                                            <Td>
-                                                <div className="text-sm font-extrabold">{categoryName(p.category)}</div>
-                                                <div className="text-xs font-semibold text-(--text-muted)">
-                                                    {p.discountPercentage ? `${p.discountPercentage}% off` : "No discount"}
-                                                </div>
-                                            </Td>
+                                        <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-xl bg-black/60 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur-sm">
+                                            <Layers size={12} /> {p.variants?.length || 0} variants
+                                        </div>
 
-                                            <Td className="text-right">
-                                                <div className="text-sm font-extrabold">{formatMoneyBDT(p.price)}</div>
-                                                <div className="text-xs font-semibold text-(--text-muted)">
-                                                    Final: {final == null ? "—" : formatMoneyBDT(final)}
-                                                </div>
-                                            </Td>
-
-                                            <Td className="text-right">
-                                                <div className="text-sm font-extrabold">{totalStock}</div>
-                                                <div className="text-xs font-semibold text-(--text-muted)">
-                                                    {p.variants?.length || 0} variants
-                                                </div>
-                                            </Td>
-
-                                            <Td>
-                                                <StatusPill active={p.isActive} />
-                                            </Td>
-
-                                            <Td className="text-right">
-                                                <div className="inline-flex items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        onClick={() => openEdit(String(p?._id))}
-                                                    >
-                                                        <Pencil size={16} /> Edit
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="danger"
-                                                        size="sm"
-                                                    >
-                                                        <Trash2 size={16} /> Delete
-                                                    </Button>
-                                                </div>
-                                            </Td>
-                                        </tr>
-                                    )
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan={6} className="px-5 py-10 text-center">
-                                        <div className="mx-auto max-w-md">
-                                            <div className="text-sm font-extrabold">No products found</div>
-                                            <div className="mt-1 text-sm font-semibold text-(--text-muted)">
-                                                Try changing filters or create a new product.
+                                        {p?.isFeatured ? (
+                                            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-xl bg-amber-500 px-2.5 py-1 text-[11px] font-extrabold text-white shadow-sm">
+                                                <Star size={12} className="fill-current" /> Featured
                                             </div>
-                                            <div className="mt-4">
-                                                <Button type="button" onClick={openCreate}>
-                                                    <Plus size={18} /> Create product
-                                                </Button>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="space-y-2.5 p-3.5">
+                                        <div>
+                                            <button
+                                                type="button"
+                                                onClick={() => openDetails(p?.slug)}
+                                                className="truncate text-left text-sm font-extrabold hover:underline cursor-pointer"
+                                            >
+                                                {p.title}
+                                            </button>
+                                            <div className="mt-0.5 text-xs font-semibold text-(--text-muted)">
+                                                {categoryName(p.category)}
                                             </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <StatusPill active={p.isActive} />
+                                            <div className="rounded-xl border border-(--border) bg-(--surface) px-2.5 py-1 text-[11px] font-extrabold text-(--text-muted)">
+                                                Stock {totalStock}
+                                            </div>
+                                            {p.discountPercentage ? (
+                                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700">
+                                                    {p.discountPercentage}% OFF
+                                                </div>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-(--border) bg-(--surface) p-3">
+                                            <div>
+                                                <div className="text-[11px] font-extrabold text-(--text-muted)">Price</div>
+                                                <div className="mt-0.5 text-sm font-extrabold">{formatMoneyBDT(p.price)}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[11px] font-extrabold text-(--text-muted)">Final</div>
+                                                <div className="mt-0.5 text-sm font-extrabold">
+                                                    {final == null ? "—" : formatMoneyBDT(final)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="truncate text-[11px] font-semibold text-(--text-muted)">
+                                            {p.tags?.length ? p.tags.map((t) => `#${t}`).join(" ") : p?.slug || "—"}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => openDetails(p?.slug)}
+                                            className="inline-flex items-center gap-1 text-xs font-extrabold text-(--primary) hover:underline cursor-pointer"
+                                        >
+                                            <Eye size={14} /> View details
+                                        </button>
+
+                                        <div className="grid grid-cols-2 gap-2 pt-1">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => openEdit(String(p?._id))}
+                                            >
+                                                <Pencil size={16} /> Edit
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant={p?.isFeatured ? "secondary" : "primary"}
+                                                size="sm"
+                                                onClick={() => onToggleFeatured(p?.slug)}
+                                                disabled={isTogglingFeatured}
+                                            >
+                                                <Star size={16} className={p?.isFeatured ? "fill-current" : ""} />
+                                                {p?.isFeatured ? "Featured" : "Feature"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </article>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <div className="px-5 py-10 text-center">
+                        <div className="mx-auto max-w-md">
+                            <div className="text-sm font-extrabold">No products found</div>
+                            <div className="mt-1 text-sm font-semibold text-(--text-muted)">
+                                Try changing filters or create a new product.
+                            </div>
+                            <div className="mt-4">
+                                <Button type="button" onClick={openCreate}>
+                                    <Plus size={18} /> Create product
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-3 border-t border-(--border) px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-xs font-semibold text-(--text-muted)">
@@ -444,6 +467,91 @@ export default function Products() {
                 </div>
             </div>
 
+            <div
+                className={`fixed inset-0 z-40 transition ${filtersOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+                aria-hidden={!filtersOpen}
+            >
+                <div
+                    className={`absolute inset-0 bg-black/35 transition-opacity ${filtersOpen ? "opacity-100" : "opacity-0"}`}
+                    onClick={() => setFiltersOpen(false)}
+                />
+
+                <aside
+                    className={`absolute right-0 top-0 h-full w-full max-w-sm border-l border-(--border) bg-(--surface) p-5 shadow-2xl transition-transform duration-300 ${filtersOpen ? "translate-x-0" : "translate-x-full"}`}
+                >
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-sm font-extrabold">Filters</div>
+                            <div className="text-xs font-semibold text-(--text-muted)">
+                                Quick refine your products
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setFiltersOpen(false)}
+                        >
+                            <ChevronRight size={16} />
+                        </Button>
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                        <div>
+                            <div className="mb-2 text-xs font-extrabold text-(--text-muted)">Status</div>
+                            <Select
+                                value={status}
+                                onChange={(e) => {
+                                    setStatus(e.target.value)
+                                    setPage(1)
+                                }}
+                            >
+                                <option value="all">All status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <div className="mb-2 text-xs font-extrabold text-(--text-muted)">Category</div>
+                            <Select
+                                value={category}
+                                onChange={(e) => {
+                                    setCategory(e.target.value)
+                                    setPage(1)
+                                }}
+                            >
+                                <option value="all">All categories</option>
+                                {categories
+                                    .filter((c) => c?._id && c?.name)
+                                    .map((c) => (
+                                        <option key={c._id} value={c.slug}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-5 left-5 right-5 grid grid-cols-2 gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                                setStatus("all")
+                                setCategory("all")
+                                setPage(1)
+                            }}
+                        >
+                            Reset
+                        </Button>
+                        <Button type="button" onClick={() => setFiltersOpen(false)}>
+                            Apply
+                        </Button>
+                    </div>
+                </aside>
+            </div>
+
             <ProductFormModal
                 key={`${modalMode}:${modalOpen ? "open" : "closed"}:${editingId || "new"}`}
                 open={modalOpen}
@@ -455,24 +563,5 @@ export default function Products() {
                 submitting={isCreating || isUpdating}
             />
         </div>
-    )
-}
-
-function Th({ children, className }) {
-    return (
-        <th
-            className={cn(
-                "whitespace-nowrap px-5 py-3 text-left text-xs font-extrabold text-(--text-muted)",
-                className
-            )}
-        >
-            {children}
-        </th>
-    )
-}
-
-function Td({ children, className }) {
-    return (
-        <td className={cn("px-5 py-4 align-middle", className)}>{children}</td>
     )
 }

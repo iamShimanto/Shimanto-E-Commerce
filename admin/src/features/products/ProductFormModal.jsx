@@ -223,71 +223,92 @@ export default function ProductFormModal({
     return (
         <Modal
             open={open}
-            title={mode === "edit" ? "Edit product" : "Create product"}
-            description="Create/update products (API-backed)"
+            title={mode === "edit" ? "Update product" : "Create new product"}
+            description={
+                mode === "edit"
+                    ? "Refine product info, media, variants and pricing."
+                    : "Add a polished product with variants, media and pricing."
+            }
             onClose={onClose}
         >
-            <form onSubmit={submit} className="space-y-6">
-                <div className="grid gap-4 lg:grid-cols-3">
+            <form onSubmit={submit} className="space-y-5">
+                <div className="rounded-2xl border border-(--border) bg-linear-to-r from-(--surface-2) to-(--surface) px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-xs font-semibold text-(--text-muted)">
+                            {mode === "edit"
+                                ? "Fine tune details and publish updates confidently."
+                                : "Fill the details below to create a polished product card."}
+                        </div>
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--surface) px-3 py-1.5 text-[11px] font-extrabold text-(--text-muted)">
+                            <Package size={13} /> Stock {calcTotalStock(form.variants)}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
-                        <Field label="Title" error={errors.title}>
-                            <Input
-                                value={form.title}
-                                onChange={(e) => set("title", e.target.value)}
-                                placeholder="Men's Premium Hoodie"
-                                aria-invalid={Boolean(errors.title)}
-                            />
-                        </Field>
-
-                        <Field label="Description" error={errors.description}>
-                            <Textarea
-                                value={form.description}
-                                onChange={(e) => set("description", e.target.value)}
-                                placeholder="Write a short, clear description for your product..."
-                                aria-invalid={Boolean(errors.description)}
-                            />
-                        </Field>
-
-                        <div className="grid gap-4 sm:grid-cols-3">
-                            <Field label="Category" error={errors.category}>
-                                <Select
-                                    value={form.category}
-                                    onChange={(e) => set("category", e.target.value)}
-                                    aria-invalid={Boolean(errors.category)}
-                                >
-                                    <option value="">Select category</option>
-                                    {(Array.isArray(categories) && categories.length
-                                        ? categories.map((c) => ({ id: c?._id, name: c?.name }))
-                                        : CATEGORY_OPTIONS
-                                    )
-                                        .filter((c) => c?.id && c?.name)
-                                        .map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name}
-                                            </option>
-                                        ))}
-                                </Select>
-                            </Field>
-
-                            <Field label="Price" error={errors.price}>
+                        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 shadow-sm">
+                            <Field label="Title" error={errors.title}>
                                 <Input
-                                    inputMode="decimal"
-                                    value={form.price}
-                                    onChange={(e) => set("price", e.target.value)}
-                                    placeholder="1990"
-                                    aria-invalid={Boolean(errors.price)}
+                                    value={form.title}
+                                    onChange={(e) => set("title", e.target.value)}
+                                    placeholder="Men's Premium Hoodie"
+                                    aria-invalid={Boolean(errors.title)}
                                 />
                             </Field>
 
-                            <Field label="Discount %" error={errors.discountPercentage}>
-                                <Input
-                                    inputMode="numeric"
-                                    value={form.discountPercentage}
-                                    onChange={(e) => set("discountPercentage", e.target.value)}
-                                    placeholder="0"
-                                    aria-invalid={Boolean(errors.discountPercentage)}
-                                />
-                            </Field>
+                            <div className="mt-4">
+                                <Field label="Description" error={errors.description}>
+                                    <Textarea
+                                        value={form.description}
+                                        onChange={(e) => set("description", e.target.value)}
+                                        placeholder="Write a short, clear description for your product..."
+                                        aria-invalid={Boolean(errors.description)}
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                                <Field label="Category" error={errors.category}>
+                                    <Select
+                                        value={form.category}
+                                        onChange={(e) => set("category", e.target.value)}
+                                        aria-invalid={Boolean(errors.category)}
+                                    >
+                                        <option value="">Select category</option>
+                                        {(Array.isArray(categories) && categories.length
+                                            ? categories.map((c) => ({ id: c?._id, name: c?.name }))
+                                            : CATEGORY_OPTIONS
+                                        )
+                                            .filter((c) => c?.id && c?.name)
+                                            .map((c) => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.name}
+                                                </option>
+                                            ))}
+                                    </Select>
+                                </Field>
+
+                                <Field label="Price" error={errors.price}>
+                                    <Input
+                                        inputMode="decimal"
+                                        value={form.price}
+                                        onChange={(e) => set("price", e.target.value)}
+                                        placeholder="1990"
+                                        aria-invalid={Boolean(errors.price)}
+                                    />
+                                </Field>
+
+                                <Field label="Discount %" error={errors.discountPercentage}>
+                                    <Input
+                                        inputMode="numeric"
+                                        value={form.discountPercentage}
+                                        onChange={(e) => set("discountPercentage", e.target.value)}
+                                        placeholder="0"
+                                        aria-invalid={Boolean(errors.discountPercentage)}
+                                    />
+                                </Field>
+                            </div>
                         </div>
 
                         <div className="rounded-2xl border border-(--border) bg-(--surface-2) p-4">
@@ -316,9 +337,7 @@ export default function ProductFormModal({
                                         className="grid gap-2 rounded-2xl border border-(--border) bg-(--surface) p-3 sm:grid-cols-12"
                                     >
                                         <div className="sm:col-span-4">
-                                            <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                                SKU
-                                            </div>
+                                            <div className="text-[11px] font-extrabold text-(--text-muted)">SKU</div>
                                             <Input
                                                 className="mt-1 py-2.5"
                                                 value={v.sku}
@@ -328,9 +347,7 @@ export default function ProductFormModal({
                                         </div>
 
                                         <div className="sm:col-span-4">
-                                            <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                                Color
-                                            </div>
+                                            <div className="text-[11px] font-extrabold text-(--text-muted)">Color</div>
                                             <Input
                                                 className="mt-1 py-2.5"
                                                 value={v.color}
@@ -340,9 +357,7 @@ export default function ProductFormModal({
                                         </div>
 
                                         <div className="sm:col-span-2">
-                                            <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                                Size
-                                            </div>
+                                            <div className="text-[11px] font-extrabold text-(--text-muted)">Size</div>
                                             <Select
                                                 className="mt-1 py-2.5"
                                                 value={v.sizes}
@@ -357,9 +372,7 @@ export default function ProductFormModal({
                                         </div>
 
                                         <div className="sm:col-span-2">
-                                            <div className="text-[11px] font-extrabold text-(--text-muted)">
-                                                Stock
-                                            </div>
+                                            <div className="text-[11px] font-extrabold text-(--text-muted)">Stock</div>
                                             <Input
                                                 className="mt-1 py-2.5"
                                                 inputMode="numeric"
@@ -433,9 +446,7 @@ export default function ProductFormModal({
                             </div>
 
                             <div className="mt-4">
-                                <div className="text-xs font-extrabold text-(--text-muted)">
-                                    Gallery images
-                                </div>
+                                <div className="text-xs font-extrabold text-(--text-muted)">Gallery images</div>
 
                                 {errors.images ? (
                                     <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-extrabold text-rose-700">
@@ -527,9 +538,7 @@ export default function ProductFormModal({
                             <div className="flex items-center justify-between gap-2">
                                 <div>
                                     <div className="text-sm font-extrabold">Metadata</div>
-                                    <div className="text-xs font-semibold text-(--text-muted)">
-                                        Tags + status
-                                    </div>
+                                    <div className="text-xs font-semibold text-(--text-muted)">Tags + status</div>
                                 </div>
                                 <div className="inline-flex items-center gap-2 rounded-xl bg-(--surface-2) px-2 py-1 text-[11px] font-extrabold text-(--text-muted)">
                                     <Package size={14} /> Stock {calcTotalStock(form.variants)}
@@ -538,11 +547,7 @@ export default function ProductFormModal({
 
                             <div className="mt-4">
                                 <div className="text-xs font-extrabold text-(--text-muted)">Tags</div>
-                                <TagInput
-                                    tags={form.tags || []}
-                                    onAdd={onAddTag}
-                                    onRemove={onRemoveTag}
-                                />
+                                <TagInput tags={form.tags || []} onAdd={onAddTag} onRemove={onRemoveTag} />
                             </div>
 
                             <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
@@ -574,17 +579,13 @@ export default function ProductFormModal({
                             <div className="mt-4 rounded-2xl border border-(--border) bg-(--surface-2) px-4 py-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <div className="text-xs font-extrabold text-(--text-muted)">
-                                            Preview pricing
-                                        </div>
+                                        <div className="text-xs font-extrabold text-(--text-muted)">Preview pricing</div>
                                         <div className="mt-0.5 text-sm font-extrabold">
                                             {formatMoneyBDT(form.price)}
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-xs font-extrabold text-(--text-muted)">
-                                            After discount
-                                        </div>
+                                        <div className="text-xs font-extrabold text-(--text-muted)">After discount</div>
                                         <div className="mt-0.5 text-sm font-extrabold">
                                             {finalPrice == null ? "—" : formatMoneyBDT(finalPrice)}
                                         </div>
@@ -596,8 +597,9 @@ export default function ProductFormModal({
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-(--border) pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-xs font-semibold text-(--text-muted)">
-                        {mode === "edit" ? "Update existing product" : "Create a new product"}
+                    <div className="inline-flex items-center gap-2 text-xs font-semibold text-(--text-muted)">
+                        <span className="inline-block h-2 w-2 rounded-full bg-(--primary)" />
+                        {mode === "edit" ? "Ready to update this product" : "Ready to publish this product"}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -607,10 +609,12 @@ export default function ProductFormModal({
                         <Button type="submit" disabled={!canSubmit || submitting}>
                             <Check size={18} />
                             {submitting
-                                ? "Saving…"
+                                ? mode === "edit"
+                                    ? "Updating…"
+                                    : "Creating…"
                                 : mode === "edit"
-                                    ? "Save changes"
-                                    : "Create"}
+                                    ? "Update product"
+                                    : "Create product"}
                         </Button>
                     </div>
                 </div>

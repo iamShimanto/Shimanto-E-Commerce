@@ -1,4 +1,4 @@
-import { NavLink } from "react-router"
+import { NavLink, useNavigate } from "react-router"
 import {
     BarChart3,
     Boxes,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react"
 
 import { useDispatch } from "react-redux"
-import { useNavigate } from "react-router"
 
 import { cn } from "../../lib/cn"
 import Button from "../ui/Button"
@@ -100,8 +99,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
     return (
         <>
             {/* Desktop */}
-            <aside className="hidden h-dvh w-70 shrink-0 border-r border-(--border) bg-(--surface) lg:block">
-                <div className="flex h-full flex-col">
+            <aside className="sticky top-0 hidden h-screen w-70 shrink-0 border-r border-(--border) bg-(--surface) lg:block">
+                <div className="flex h-full flex-col overflow-hidden">
                     <div className="flex items-center gap-3 px-5 py-5">
                         <div className="grid h-10 w-10 place-items-center rounded-2xl bg-(--primary) text-white shadow-sm">
                             <LayoutDashboard size={18} />
@@ -116,7 +115,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                         </div>
                     </div>
 
-                    <nav className="flex-1 px-3">
+                    <nav className="flex-1 overflow-y-auto px-3 pb-3">
                         <div className="space-y-1">
                             {navItems.map((item) => (
                                 <SidebarLink key={item.to} {...item} />
@@ -127,10 +126,16 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                     <div className="border-t border-(--border) px-5 py-4">
                         <div className="flex items-center gap-3">
                             <div className="grid h-9 w-9 place-items-center rounded-full bg-(--surface-2) text-sm font-bold ring-1 ring-(--border)">
-                                <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
+                                <img
+                                    src={user?.avatar ? user?.avatar : "/default.jpg"}
+                                    alt="profile"
+                                    className="h-8 w-8 rounded-full"
+                                />
                             </div>
                             <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold">{displayName}</div>
+                                <div className="truncate text-sm font-semibold">
+                                    {displayName}
+                                </div>
                                 <div className="truncate text-xs font-medium text-(--text-muted)">
                                     {displayEmail}
                                 </div>
@@ -178,7 +183,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                     role="dialog"
                     aria-modal="true"
                 >
-                    <div className="flex h-full flex-col">
+                    <div className="flex h-full flex-col overflow-hidden">
                         <div className="flex items-center justify-between px-5 py-5">
                             <div className="flex items-center gap-3">
                                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-(--primary) text-white shadow-sm">
@@ -205,7 +210,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                             </Button>
                         </div>
 
-                        <nav className="flex-1 px-3">
+                        <nav className="flex-1 overflow-y-auto px-3 pb-3">
                             <div className="space-y-1">
                                 {navItems.map((item) => (
                                     <SidebarLink
@@ -220,10 +225,16 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                         <div className="border-t border-(--border) px-5 py-4">
                             <div className="flex items-center gap-3">
                                 <div className="grid h-9 w-9 place-items-center rounded-full bg-(--surface-2) text-sm font-bold ring-1 ring-(--border)">
-                                    <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
+                                    <img
+                                        src={user?.avatar ? user?.avatar : "/default.jpg"}
+                                        alt="profile"
+                                        className="h-8 w-8 rounded-full"
+                                    />
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="truncate text-sm font-semibold">{displayName}</div>
+                                    <div className="truncate text-sm font-semibold">
+                                        {displayName}
+                                    </div>
                                     <div className="truncate text-xs font-medium text-(--text-muted)">
                                         {displayEmail}
                                     </div>
