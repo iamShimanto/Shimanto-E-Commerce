@@ -4,6 +4,7 @@ import * as cloudinaryService from "../services/CloudinaryServices";
 import { ApiError } from "../utils/ApiError";
 import { successResponse } from "../utils/successResponse";
 import { generateUniqueSlug } from "../utils/generateSlug";
+import { productModel } from "../models/product.model";
 
 export const create: RequestHandler = async (req, res) => {
   const { name, description } = req.body;
@@ -90,4 +91,15 @@ export const updateCategory: RequestHandler = async (req, res) => {
 
   await category.save();
   return successResponse(res, "Category Updated Successfully", 200, category);
+};
+
+export const getCategoryProducts: RequestHandler = async (req, res) => {
+  const { slug } = req.params;
+
+  if (!slug) throw new ApiError(400, "Category slug is required");
+  const category = await CategoryModel.findOne({ slug });
+  if (!category) throw new ApiError(404, "Category not found");
+
+    const products = await productModel.find({ category: category._id }).populate("category", "name slug");
+  return successResponse(res, "Category Products", 200, products);
 };
