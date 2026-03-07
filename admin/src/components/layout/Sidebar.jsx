@@ -8,6 +8,7 @@ import {
     User,
     Settings,
     ShoppingCart,
+    Mail,
     Users,
     X,
 } from "lucide-react"
@@ -25,6 +26,7 @@ const adminNavItems = [
     { to: "/products", label: "Products", Icon: Boxes },
     { to: "/categories", label: "Categories", Icon: BarChart3 },
     { to: "/customers", label: "Customers", Icon: Users },
+    { to: "/subscription", label: "Subscription", Icon: Mail },
     { to: "/cart", label: "Cart", Icon: ShoppingCart },
     { to: "/profile", label: "Profile", Icon: User },
     { to: "/settings", label: "Settings", Icon: Settings },
@@ -36,6 +38,7 @@ const stuffNavItems = [
     { to: "/products", label: "Products", Icon: Boxes },
     { to: "/categories", label: "Categories", Icon: BarChart3 },
     { to: "/customers", label: "Customers", Icon: Users },
+    { to: "/subscription", label: "Subscription", Icon: Mail },
     { to: "/profile", label: "Profile", Icon: User },
 ]
 

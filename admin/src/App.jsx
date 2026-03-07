@@ -14,6 +14,7 @@ const Products = lazy(() => import("./pages/Products"))
 const ProductDetails = lazy(() => import("./pages/ProductDetails"))
 const Categories = lazy(() => import("./pages/Categories"))
 const Customers = lazy(() => import("./pages/Customers"))
+const Subscription = lazy(() => import("./pages/Subscription"))
 const Cart = lazy(() => import("./pages/Cart"))
 const Settings = lazy(() => import("./pages/Settings"))
 const Login = lazy(() => import("./pages/Login"))
@@ -76,6 +77,15 @@ export default function App() {
               element={
                 <RequireRole roles={["admin", "stuff"]}>
                   <Customers />
+                </RequireRole>
+              }
+            />
+
+            <Route
+              path="subscription"
+              element={
+                <RequireRole roles={["admin", "stuff"]}>
+                  <Subscription />
                 </RequireRole>
               }
             />
