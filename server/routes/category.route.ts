@@ -24,4 +24,6 @@ router.put(
   asyncHandler(category.updateCategory),
 );
 
+router.get("/get-category-products/:slug", asyncHandler(category.getCategoryProducts));
+
 export default router;
