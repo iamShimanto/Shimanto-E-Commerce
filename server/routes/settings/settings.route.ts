@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { roleChecker } from "../middleware/roleChecker.middleware";
-import { asyncHandler } from "../utils/asyncHandler";
-import * as settings from "../controllers/settings/backups.controller";
+import { roleChecker } from "../../middleware/roleChecker.middleware";
+import { asyncHandler } from "../../utils/asyncHandler";
+import * as settings from "../../controllers/settings/backups.controller";
 
 const router = Router();
 

@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { authMiddleWare } from "../middleware/auth.middleware";
-import { roleChecker } from "../middleware/roleChecker.middleware";
+import { authMiddleWare } from "../../middleware/auth.middleware";
+import { roleChecker } from "../../middleware/roleChecker.middleware";
 import multer from "multer";
-import { asyncHandler } from "../utils/asyncHandler";
-import * as product from "../controllers/product.controlloer";
+import { asyncHandler } from "../../utils/asyncHandler";
+import * as product from "../../controllers/product/product.controlloer";
 const upload = multer();
 
 const router = Router();
@@ -32,7 +32,11 @@ router.put(
   asyncHandler(product.updateProduct),
 );
 
-router.put("/is-featured/:slug", authMiddleWare, roleChecker("admin"), asyncHandler(product.toggleFeatured));
-
+router.put(
+  "/is-featured/:slug",
+  authMiddleWare,
+  roleChecker("admin"),
+  asyncHandler(product.toggleFeatured),
+);
 
 export default router;
