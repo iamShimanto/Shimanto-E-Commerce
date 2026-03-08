@@ -1,10 +1,10 @@
 import { RequestHandler } from "express";
-import { CategoryModel } from "../models/category.model";
-import * as cloudinaryService from "../services/CloudinaryServices";
-import { ApiError } from "../utils/ApiError";
-import { successResponse } from "../utils/successResponse";
-import { generateUniqueSlug } from "../utils/generateSlug";
-import { productModel } from "../models/product.model";
+import { CategoryModel } from "../../models/category.model";
+import * as cloudinaryService from "../../services/CloudinaryServices";
+import { ApiError } from "../../utils/ApiError";
+import { successResponse } from "../../utils/successResponse";
+import { generateUniqueSlug } from "../../utils/generateSlug";
+import { productModel } from "../../models/product.model";
 
 export const create: RequestHandler = async (req, res) => {
   const { name, description } = req.body;
@@ -100,6 +100,8 @@ export const getCategoryProducts: RequestHandler = async (req, res) => {
   const category = await CategoryModel.findOne({ slug });
   if (!category) throw new ApiError(404, "Category not found");
 
-    const products = await productModel.find({ category: category._id }).populate("category", "name slug");
+  const products = await productModel
+    .find({ category: category._id })
+    .populate("category", "name slug");
   return successResponse(res, "Category Products", 200, products);
 };

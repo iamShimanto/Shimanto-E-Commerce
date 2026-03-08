@@ -1,12 +1,12 @@
 import { Router } from "express";
 const router = Router();
-import authRoute from "./auth.route";
-import categoryRoute from "./category.route";
-import productRoute from "./product.route";
-import cartRoute from "./cart.route";
+import authRoute from "./auth/auth.route";
+import categoryRoute from "./category/category.route";
+import productRoute from "./product/product.route";
+import cartRoute from "./cart/cart.route";
 import { rateLimit } from "../utils/rateLimit";
 import { authMiddleWare } from "../middleware/auth.middleware";
-import settingsRoute from "./settings.route";
+import settingsRoute from "./settings/settings.route";
 import subscriptionRoute from "./subscription/subscription.routes";
 
 router.use(

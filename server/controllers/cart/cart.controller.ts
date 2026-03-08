@@ -1,10 +1,10 @@
 import { RequestHandler } from "express";
-import { ApiError } from "../utils/ApiError";
-import { productModel } from "../models/product.model";
-import { cartModel } from "../models/cart.model";
-import { successResponse } from "../utils/successResponse";
+import { ApiError } from "../../utils/ApiError";
+import { productModel } from "../../models/product.model";
+import { cartModel } from "../../models/cart.model";
+import { successResponse } from "../../utils/successResponse";
 import { Types } from "mongoose";
-import { delCache } from "../utils/redisCache";
+import { delCache } from "../../utils/redisCache";
 
 export const addToCart: RequestHandler = async (req, res) => {
   const { productId, sku, quantity } = req.body;

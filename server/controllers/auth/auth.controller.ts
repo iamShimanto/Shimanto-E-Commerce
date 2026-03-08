@@ -1,16 +1,16 @@
 import { type RequestHandler } from "express";
-import { isValidEmail } from "../utils/validation";
-import { sendMail } from "../services/sendMail";
-import { generateOtp } from "../utils/Generator";
-import * as templates from "../services/emailTemp";
-import * as tokenHelper from "../utils/tokenHelper";
-import { env } from "../Config/envConfig";
-import * as cloudinaryService from "../services/CloudinaryServices";
-import { ApiError } from "../utils/ApiError";
-import { UserModel } from "../models/user.model";
-import { successResponse } from "../utils/successResponse";
-import redis from "../Config/redis";
-import { delCache, getCache, setCache } from "../utils/redisCache";
+import { isValidEmail } from "../../utils/validation";
+import { sendMail } from "../../services/sendMail";
+import { generateOtp } from "../../utils/Generator";
+import * as templates from "../../services/emailTemp";
+import * as tokenHelper from "../../utils/tokenHelper";
+import { env } from "../../Config/envConfig";
+import * as cloudinaryService from "../../services/CloudinaryServices";
+import { ApiError } from "../../utils/ApiError";
+import { UserModel } from "../../models/user.model";
+import { successResponse } from "../../utils/successResponse";
+import redis from "../../Config/redis";
+import { delCache, getCache, setCache } from "../../utils/redisCache";
 import { Types } from "mongoose";
 
 export const craeteUser: RequestHandler = async (req, res) => {
