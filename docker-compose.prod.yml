@@ -31,6 +31,20 @@ services:
       - backend
     restart: unless-stopped
 
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: prod
+    container_name: client
+    ports:
+      - "127.0.0.1:8080:80"
+    env_file:
+      - ./client/.env.production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: redis
