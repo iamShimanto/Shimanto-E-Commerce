@@ -40,6 +40,24 @@ services:
     depends_on:
       - backend
 
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: dev
+    container_name: client-dev
+    ports:
+      - "5174:5174"
+    env_file:
+      - ./client/.env
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
   redis:
     image: redis:7-alpine
     container_name: redis-dev
