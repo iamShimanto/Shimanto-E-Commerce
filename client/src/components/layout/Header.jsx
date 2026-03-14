@@ -12,15 +12,7 @@ import Button from "../ui/Button";
 import ThemeToggle from "../ui/ThemeToggle";
 import { useTheme } from "../../hooks/useTheme";
 import { Link } from "react-router";
-
-
-const categories = [
-  { label: "Electronics", href: "/categories/electronics" },
-  { label: "Fashion", href: "/categories/fashion" },
-  { label: "Home & Living", href: "/categories/home-living" },
-  { label: "Beauty", href: "/categories/beauty" },
-  { label: "Groceries", href: "/categories/groceries" },
-];
+import { useGetCategoriesQuery } from "../../api/category/categoryApi";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -33,6 +25,13 @@ export default function Header() {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const categoryRef = useRef(null);
   const { isDark, toggle } = useTheme();
+
+  const { data: apiCategories = [] } = useGetCategoriesQuery();
+  const categoriesToShow = (apiCategories && apiCategories.length > 0)
+    ? apiCategories.map((c) => ({ label: c.name, href: `/categories/${c.slug}` }))
+    : [];
+
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -72,7 +71,7 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80 dark:bg-zinc-950/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 container items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           {/* Left: Logo */}
           <Link
             to="/"
@@ -122,7 +121,7 @@ export default function Header() {
                   : "pointer-events-none invisible -translate-y-2 opacity-0"
                   }`}
               >
-                {categories.map((item) => (
+                {categoriesToShow.map((item) => (
                   <Link
                     key={item.label}
                     to={item.href}
@@ -292,7 +291,7 @@ export default function Header() {
               >
                 <div className="overflow-hidden">
                   <div className="mt-2 space-y-1">
-                    {categories.map((item) => (
+                    {categoriesToShow.map((item) => (
                       <Link
                         key={item.label}
                         to={item.href}

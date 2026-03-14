@@ -3,11 +3,15 @@ import './index.css'
 import App from './App.jsx'
 import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router';
+import { Provider } from 'react-redux';
+import store from './store/store.js';
 
 createRoot(document.getElementById('root')).render(
   <HelmetProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </Provider>
   </HelmetProvider>,
 )
