@@ -1,5 +1,7 @@
 import React from 'react'
 import SEO from '../components/seo/SEO';
+import ThemeToggle from '../components/ui/ThemeToggle';
+import { useTheme } from '../hooks/useTheme';
 
 const Home = () => {
   const homeSEO = {
@@ -10,10 +12,14 @@ const Home = () => {
     url: '/',
     type: 'website'
   };
+  const { isDark, toggle } = useTheme();
+
   return (
     <>
       <SEO {...homeSEO} />
-      <div>Home</div>
+      <div>
+        <ThemeToggle isDark={isDark} onToggle={toggle} />
+      </div>
     </>
   )
 }
