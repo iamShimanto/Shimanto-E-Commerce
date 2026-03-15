@@ -20,7 +20,7 @@ const SEO = ({
     rating,
     reviewCount
 }) => {
-    const siteName = 'Your E-commerce Store';
+    const siteName = 'Shimanto E-commerce Store';
     const siteUrl = 'https://e-commerce.shimanto.dev';
     const defaultImage = 'https://e-commerce.shimanto.dev/og.jpg';
 
