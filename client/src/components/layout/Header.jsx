@@ -7,12 +7,18 @@ import {
   User,
   X,
   Store,
+  LogOut,
+  LayoutDashboard,
 } from "lucide-react";
+import { Link } from "react-router";
 import Button from "../ui/Button";
 import ThemeToggle from "../ui/ThemeToggle";
 import { useTheme } from "../../hooks/useTheme";
-import { Link } from "react-router";
 import { useGetCategoriesQuery } from "../../api/category/categoryApi";
+import { authApi, useLogoutMutation, useProfileQuery } from "../../api/auth/authApi";
+import { useNavigate } from "react-router";
+import { useToast } from "../../hooks/useToast";
+import { useDispatch } from "react-redux"
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -22,27 +28,52 @@ const navLinks = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [desktopCategoryOpen, setDesktopCategoryOpen] = useState(false);
+  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
   const categoryRef = useRef(null);
+  const profileMenuRef = useRef(null);
+
   const { isDark, toggle } = useTheme();
 
   const { data: apiCategories = [] } = useGetCategoriesQuery();
-  const categoriesToShow = (apiCategories && apiCategories.length > 0)
-    ? apiCategories.map((c) => ({ label: c.name, href: `/categories/${c.slug}` }))
-    : [];
+  const categoriesToShow =
+    Array.isArray(apiCategories) && apiCategories.length > 0
+      ? apiCategories.map((c) => ({
+        label: c.name,
+        href: `/categories/${c.slug}`,
+      }))
+      : [];
 
+  const { data: profileData, isLoading: profileLoading } = useProfileQuery();
+  const [triggerLogout, { isLoading: logoutLoading }] = useLogoutMutation()
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const toast = useToast()
 
+  const user = profileData?.data || profileData?.user || null;
+  const isLoggedIn = !!user && !profileLoading;
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
-        setCategoryOpen(false);
+        setDesktopCategoryOpen(false);
+      }
+
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
+        setProfileMenuOpen(false);
       }
     }
 
     function handleEscape(event) {
       if (event.key === "Escape") {
-        setCategoryOpen(false);
+        setDesktopCategoryOpen(false);
+        setMobileCategoryOpen(false);
+        setProfileMenuOpen(false);
         setMobileOpen(false);
       }
     }
@@ -57,21 +88,44 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
 
+  const closeMobileDrawer = () => {
+    setMobileOpen(false);
+    setMobileCategoryOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await triggerLogout().unwrap()
+    } catch (error) {
+      const message =
+        error?.data?.message ||
+        error?.data?.error ||
+        (typeof error === "string" ? error : null) ||
+        "Logout failed"
+      toast.error({
+        title: "Logout Error",
+        message: message,
+      })
+    } finally {
+      dispatch(authApi.util.resetApiState())
+      navigate("/", { replace: true })
+      toast.success({
+        title: "Logged out",
+        message: "You have been successfully logged out.",
+      })
+    }
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80 dark:bg-zinc-950/80">
-        <div className="mx-auto flex h-16 container items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           {/* Left: Logo */}
           <Link
             to="/"
@@ -80,6 +134,7 @@ export default function Header() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white transition-colors duration-300 dark:bg-white dark:text-zinc-900">
               <Store size={18} />
             </span>
+
             <div className="hidden sm:block">
               <p className="text-sm font-semibold leading-none text-zinc-900 dark:text-zinc-100">
                 Shimanto Store
@@ -102,35 +157,41 @@ export default function Header() {
             <div className="relative" ref={categoryRef}>
               <button
                 type="button"
-                onClick={() => setCategoryOpen((prev) => !prev)}
+                onClick={() => setDesktopCategoryOpen((prev) => !prev)}
                 className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-                aria-expanded={categoryOpen}
+                aria-expanded={desktopCategoryOpen}
                 aria-haspopup="menu"
               >
                 Categories
                 <ChevronDown
                   size={16}
-                  className={`transition-transform duration-300 ${categoryOpen ? "rotate-180" : ""
+                  className={`transition-transform duration-300 ${desktopCategoryOpen ? "rotate-180" : ""
                     }`}
                 />
               </button>
 
               <div
-                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 ${categoryOpen
+                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 ${desktopCategoryOpen
                   ? "pointer-events-auto visible translate-y-0 opacity-100"
                   : "pointer-events-none invisible -translate-y-2 opacity-0"
                   }`}
               >
-                {categoriesToShow.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className="block rounded-xl px-4 py-2.5 text-sm text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-                    onClick={() => setCategoryOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                {categoriesToShow.length > 0 ? (
+                  categoriesToShow.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.href}
+                      className="block rounded-xl px-4 py-2.5 text-sm text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                      onClick={() => setDesktopCategoryOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))
+                ) : (
+                  <p className="px-4 py-2.5 text-sm text-zinc-500 dark:text-zinc-400">
+                    No categories found
+                  </p>
+                )}
               </div>
             </div>
 
@@ -170,13 +231,52 @@ export default function Header() {
               </span>
             </Link>
 
-            <Link
-              to="/profile"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-              aria-label="Profile"
-            >
-              <User size={18} />
-            </Link>
+            {isLoggedIn ? (
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                  aria-label="Profile menu"
+                  aria-expanded={profileMenuOpen}
+                >
+                  <User size={18} />
+                </button>
+
+                <div
+                  className={`absolute right-0 top-[calc(100%+10px)] w-52 origin-top-right rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 ${profileMenuOpen
+                    ? "pointer-events-auto visible translate-y-0 opacity-100"
+                    : "pointer-events-none invisible -translate-y-2 opacity-0"
+                    }`}
+                >
+                  <Link
+                    to="/profile"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                  >
+                    <LayoutDashboard size={16} />
+                    Dashboard
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={logoutLoading}
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-rose-600 transition-all duration-300 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <LogOut size={16} />
+                    {logoutLoading ? "Logging out..." : "Logout"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition-all duration-300 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              >
+                Login
+              </Link>
+            )}
 
             <ThemeToggle isDark={isDark} onToggle={toggle} />
           </div>
@@ -212,7 +312,7 @@ export default function Header() {
           ? "pointer-events-auto visible opacity-100"
           : "pointer-events-none invisible opacity-0"
           }`}
-        onClick={() => setMobileOpen(false)}
+        onClick={closeMobileDrawer}
       />
 
       {/* Mobile Drawer */}
@@ -229,16 +329,14 @@ export default function Header() {
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Shimanto Store
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Menu
-              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Menu</p>
             </div>
           </div>
 
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileDrawer}
             aria-label="Close menu"
           >
             <X size={18} />
@@ -246,7 +344,6 @@ export default function Header() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {/* Mobile Search */}
           <form className="relative mb-5">
             <Search
               size={16}
@@ -259,12 +356,11 @@ export default function Header() {
             />
           </form>
 
-          {/* Mobile Nav */}
           <nav className="space-y-2">
             <Link
               to="/"
               className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileDrawer}
             >
               Home
             </Link>
@@ -272,35 +368,41 @@ export default function Header() {
             <div className="rounded-2xl border border-zinc-200 p-2 dark:border-zinc-800">
               <button
                 type="button"
-                onClick={() => setCategoryOpen((prev) => !prev)}
+                onClick={() => setMobileCategoryOpen((prev) => !prev)}
                 className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
               >
                 <span>Categories</span>
                 <ChevronDown
                   size={16}
-                  className={`transition-transform duration-300 ${categoryOpen ? "rotate-180" : ""
+                  className={`transition-transform duration-300 ${mobileCategoryOpen ? "rotate-180" : ""
                     }`}
                 />
               </button>
 
               <div
-                className={`grid transition-all duration-300 ${categoryOpen
+                className={`grid transition-all duration-300 ${mobileCategoryOpen
                   ? "grid-rows-[1fr] opacity-100"
                   : "grid-rows-[0fr] opacity-0"
                   }`}
               >
                 <div className="overflow-hidden">
                   <div className="mt-2 space-y-1">
-                    {categoriesToShow.map((item) => (
-                      <Link
-                        key={item.label}
-                        to={item.href}
-                        className="block rounded-xl px-3 py-2 text-sm text-zinc-600 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
+                    {categoriesToShow.length > 0 ? (
+                      categoriesToShow.map((item) => (
+                        <Link
+                          key={item.label}
+                          to={item.href}
+                          className="block rounded-xl px-3 py-2 text-sm text-zinc-600 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                          onClick={closeMobileDrawer}
+                        >
+                          {item.label}
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+                        No categories found
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -309,7 +411,7 @@ export default function Header() {
             <Link
               to="/about"
               className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileDrawer}
             >
               About
             </Link>
@@ -317,7 +419,7 @@ export default function Header() {
             <Link
               to="/contact"
               className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileDrawer}
             >
               Contact
             </Link>
@@ -325,17 +427,41 @@ export default function Header() {
 
           {/* Mobile Actions */}
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <Link
-              to="/profile"
-              className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
-              onClick={() => setMobileOpen(false)}
-            >
-              <User size={16} />
-              Profile
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/profile"
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                onClick={closeMobileDrawer}
+              >
+                <User size={16} />
+                Profile
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-900 transition-all duration-300 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                onClick={closeMobileDrawer}
+              >
+                Login
+              </Link>
+            )}
 
             <ThemeToggle isDark={isDark} onToggle={toggle} />
           </div>
+
+          {isLoggedIn && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={logoutLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 transition-all duration-300 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LogOut size={16} />
+                {logoutLoading ? "Logging out..." : "Logout"}
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>
