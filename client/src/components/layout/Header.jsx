@@ -126,32 +126,31 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80 dark:bg-zinc-950">
+      <header className="sticky top-0 z-50 border-b border-zinc-200/80 text-white bg-zinc-950 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80">
         <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           {/* Left: Logo */}
           <Link
             to="/"
-            className="flex shrink-0 items-center gap-2 rounded-xl px-2 py-1.5 transition-all duration-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            className="flex shrink-0 items-center gap-2 rounded-xl px-2 py-1.5 transition-all duration-300"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white transition-colors duration-300 dark:bg-white dark:text-zinc-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-300">
               <Store size={18} />
             </span>
-
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold leading-none text-zinc-900 dark:text-zinc-100">
-                Shimanto Store
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                E-commerce
-              </p>
-            </div>
+          <div className="hidden sm:block">
+            <p className="text-sm font-semibold leading-none">
+              Shimanto Store
+            </p>
+            <p className="text-xs">
+              E-commerce
+            </p>
+          </div>
           </Link>
 
           {/* Middle: Desktop Nav */}
           <nav className="hidden items-center gap-1 lg:flex">
             <Link
               to="/"
-              className="rounded-xl px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300"
             >
               Home
             </Link>
@@ -160,7 +159,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setDesktopCategoryOpen((prev) => !prev)}
-                className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300"
                 aria-expanded={desktopCategoryOpen}
                 aria-haspopup="menu"
               >
@@ -173,7 +172,7 @@ export default function Header() {
               </button>
 
               <div
-                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 ${desktopCategoryOpen
+                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl border border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${desktopCategoryOpen
                   ? "pointer-events-auto visible translate-y-0 opacity-100"
                   : "pointer-events-none invisible -translate-y-2 opacity-0"
                   }`}
@@ -183,14 +182,14 @@ export default function Header() {
                     <Link
                       key={item.label}
                       to={item.href}
-                      className="block rounded-xl px-4 py-2.5 text-sm text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                      className="block rounded-xl px-4 py-2.5 text-sm transition-all duration-300"
                       onClick={() => setDesktopCategoryOpen(false)}
                     >
                       {item.label}
                     </Link>
                   ))
                 ) : (
-                  <p className="px-4 py-2.5 text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="px-4 py-2.5 text-sm">
                     No categories found
                   </p>
                 )}
@@ -201,7 +200,7 @@ export default function Header() {
               <Link
                 key={item.label}
                 to={item.href}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                className="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300"
               >
                 {item.label}
               </Link>
@@ -213,22 +212,22 @@ export default function Header() {
             <form className="relative">
               <Search
                 size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
               />
               <input
                 type="text"
                 placeholder="Search products..."
-                className="h-10 w-64 rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-4 text-sm text-zinc-900 outline-none transition-all duration-300 placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-600 dark:focus:bg-zinc-950"
+                className="h-10 w-64 rounded-xl border border-zinc-200 pl-9 pr-4 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
               />
             </form>
 
             <Link
               to="/cart"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 transition-all duration-300 hover:-translate-y-0.5"
               aria-label="Cart"
             >
               <ShoppingCart size={18} />
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-900 px-1 text-[10px] font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
                 2
               </span>
             </Link>
@@ -238,7 +237,7 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={() => setProfileMenuOpen((prev) => !prev)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 transition-all duration-300 hover:-translate-y-0.5"
                   aria-label="Profile menu"
                   aria-expanded={profileMenuOpen}
                 >
@@ -246,7 +245,7 @@ export default function Header() {
                 </button>
 
                 <div
-                  className={`absolute right-0 top-[calc(100%+10px)] w-52 origin-top-right rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 ${profileMenuOpen
+                  className={`absolute right-0 top-[calc(100%+10px)] w-52 origin-top-right rounded-2xl border border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${profileMenuOpen
                     ? "pointer-events-auto visible translate-y-0 opacity-100"
                     : "pointer-events-none invisible -translate-y-2 opacity-0"
                     }`}
@@ -254,7 +253,7 @@ export default function Header() {
                   <Link
                     to="/profile"
                     onClick={() => setProfileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
                   >
                     <LayoutDashboard size={16} />
                     Dashboard
@@ -264,7 +263,7 @@ export default function Header() {
                     type="button"
                     onClick={handleLogout}
                     disabled={logoutLoading}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-rose-600 transition-all duration-300 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogOut size={16} />
                     {logoutLoading ? "Logging out..." : "Logout"}
@@ -274,7 +273,7 @@ export default function Header() {
             ) : (
               <Link
                 to="/login"
-                className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition-all duration-300 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium transition-all duration-300"
               >
                 Login
               </Link>
@@ -287,11 +286,11 @@ export default function Header() {
           <div className="flex items-center gap-2 lg:hidden">
             <Link
               to="/cart"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-all duration-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 transition-all duration-300"
               aria-label="Cart"
             >
               <ShoppingCart size={18} />
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-900 px-1 text-[10px] font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
                 2
               </span>
             </Link>
@@ -310,7 +309,7 @@ export default function Header() {
 
       {/* Mobile Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-all duration-300 lg:hidden ${mobileOpen
+        className={`fixed inset-0 z-40 backdrop-blur-[2px] transition-all duration-300 lg:hidden ${mobileOpen
           ? "pointer-events-auto visible opacity-100"
           : "pointer-events-none invisible opacity-0"
           }`}
@@ -319,19 +318,19 @@ export default function Header() {
 
       {/* Mobile Drawer */}
       <aside
-        className={`fixed right-0 top-0 z-50 flex h-dvh w-[88%] max-w-sm flex-col border-l border-zinc-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-zinc-800 dark:bg-zinc-950 lg:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed right-0 top-0 z-50 flex h-dvh w-[88%] max-w-sm flex-col border-l border-zinc-200 bg-black text-white shadow-2xl transition-transform duration-300 ease-out dark:border-zinc-800 lg:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"
           }`}
       >
         <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl">
               <Store size={18} />
             </span>
             <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <p className="text-sm font-semibold">
                 Shimanto Store
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Menu</p>
+              <p className="text-xs">Menu</p>
             </div>
           </div>
 
@@ -341,7 +340,7 @@ export default function Header() {
             onClick={closeMobileDrawer}
             aria-label="Close menu"
           >
-            <X size={18} />
+            <X size={18} className="text-white" />
           </Button>
         </div>
 
@@ -349,19 +348,19 @@ export default function Header() {
           <form className="relative mb-5">
             <Search
               size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
             />
             <input
               type="text"
               placeholder="Search products..."
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-4 text-sm text-zinc-900 outline-none transition-all duration-300 placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-600 dark:focus:bg-zinc-950"
+              className="h-11 w-full rounded-xl border border-zinc-200 pl-9 pr-4 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
             />
           </form>
 
           <nav className="space-y-2">
             <Link
               to="/"
-              className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="block rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
               onClick={closeMobileDrawer}
             >
               Home
@@ -371,7 +370,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setMobileCategoryOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-sm font-medium transition-all duration-300"
               >
                 <span>Categories</span>
                 <ChevronDown
@@ -394,14 +393,14 @@ export default function Header() {
                         <Link
                           key={item.label}
                           to={item.href}
-                          className="block rounded-xl px-3 py-2 text-sm text-zinc-600 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                          className="block rounded-xl px-3 py-2 text-sm transition-all duration-300"
                           onClick={closeMobileDrawer}
                         >
                           {item.label}
                         </Link>
                       ))
                     ) : (
-                      <p className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+                      <p className="px-3 py-2 text-sm">
                         No categories found
                       </p>
                     )}
@@ -412,7 +411,7 @@ export default function Header() {
 
             <Link
               to="/about"
-              className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="block rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
               onClick={closeMobileDrawer}
             >
               About
@@ -420,7 +419,7 @@ export default function Header() {
 
             <Link
               to="/contact"
-              className="block rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="block rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
               onClick={closeMobileDrawer}
             >
               Contact
@@ -432,7 +431,7 @@ export default function Header() {
             {isLoggedIn ? (
               <Link
                 to="/profile"
-                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-800 transition-all duration-300 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium transition-all duration-300"
                 onClick={closeMobileDrawer}
               >
                 <User size={16} />
@@ -441,7 +440,7 @@ export default function Header() {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-900 transition-all duration-300 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                className="flex items-center justify-center rounded-xl border border-zinc-200 px-4 py-3 text-sm font-medium transition-all duration-300"
                 onClick={closeMobileDrawer}
               >
                 Login
@@ -457,7 +456,7 @@ export default function Header() {
                 type="button"
                 onClick={handleLogout}
                 disabled={logoutLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 transition-all duration-300 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LogOut size={16} />
                 {logoutLoading ? "Logging out..." : "Logout"}

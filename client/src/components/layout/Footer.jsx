@@ -22,7 +22,7 @@ const shopLinks = [
 function FooterLinkGroup({ title, links }) {
   return (
     <div>
-      <h3 className="mb-6 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+      <h3 className="mb-6 text-xs font-semibold uppercase tracking-[0.18em]">
         {title}
       </h3>
 
@@ -31,7 +31,7 @@ function FooterLinkGroup({ title, links }) {
           <li key={link.label}>
             <Link
               to={link.href}
-              className="text-sm text-zinc-600 transition-colors duration-300 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white"
+              className="text-sm transition-colors duration-300"
             >
               {link.label}
             </Link>
@@ -49,7 +49,7 @@ function SocialLink({ href, icon: Icon, label }) {
       aria-label={label}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-zinc-500 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300"
     >
       <Icon size={18} />
     </Link>
@@ -58,7 +58,7 @@ function SocialLink({ href, icon: Icon, label }) {
 
 function PaymentBadge({ children }) {
   return (
-    <div className="flex h-10 min-w-18 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-500 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+    <div className="flex h-10 min-w-18 items-center justify-center rounded-xl border border-zinc-200 px-3 text-sm font-semibold shadow-sm">
       {children}
     </div>
   );
@@ -66,22 +66,22 @@ function PaymentBadge({ children }) {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-200 bg-zinc-50 text-zinc-900 transition-colors duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+    <footer className="border-t border-zinc-200 transition-colors duration-300 dark:border-zinc-800">
       <div className="container mx-auto px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr_1fr]">
           {/* Brand */}
           <div className="max-w-xs">
             <Link to="/" className="inline-flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-800">
                 <CreditCard size={18} />
               </span>
 
-              <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              <span className="text-2xl font-bold tracking-tight">
                 Ecommerce
               </span>
             </Link>
 
-            <p className="mt-6 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-6 text-sm leading-7">
               DevCut is a YouTube channel for practical project-based learning.
             </p>
 
@@ -110,7 +110,7 @@ export default function Footer() {
 
           {/* Payments */}
           <div>
-            <h3 className="mb-6 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+            <h3 className="mb-6 text-xs font-semibold uppercase tracking-[0.18em]">
               Accepted Payments
             </h3>
 
@@ -123,7 +123,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 border-t border-zinc-200 pt-8 dark:border-zinc-800">
-          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-center text-sm">
             © 2023 DevCut. All rights reserved.
           </p>
         </div>
