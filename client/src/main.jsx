@@ -5,14 +5,15 @@ import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
 import store from './store/store.js';
-import ToastProvider from './components/ui/toast/ToastProvider.jsx';
+import ToastProvider from './hooks/useToast.jsx';
 
 createRoot(document.getElementById('root')).render(
   <HelmetProvider>
     <Provider store={store}>
       <BrowserRouter>
-        <App />
-        <ToastProvider />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </BrowserRouter>
     </Provider>
   </HelmetProvider>,

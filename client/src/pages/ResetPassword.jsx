@@ -10,9 +10,8 @@ import { useToast } from "../hooks/useToast";
 const ResetPassword = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const [serverError, setServerError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-    const toast = useToast();
+    const { push } = useToast();
     const token = searchParams.get("sec") || "";
 
     const resetPasswordSEO = {
@@ -46,11 +45,14 @@ const ResetPassword = () => {
     const hasToken = useMemo(() => Boolean(token), [token]);
 
     const onSubmit = async (data) => {
-        setServerError("");
         setSuccessMessage("");
 
         if (!token) {
-            setServerError("Invalid or missing reset link.");
+            push({
+                title: "Invalid Link",
+                message: "The reset link you provided is invalid or has expired.",
+                variant: "error"
+            });
             return;
         }
         try {
@@ -62,21 +64,20 @@ const ResetPassword = () => {
             setSuccessMessage(
                 res?.message || "Password updated successfully. Redirecting to login..."
             );
-            toast.success({
+            push({
                 title: "Password Reset Successful",
-                description: "Your password has been updated. Please log in with your new password.",
+                message: "Your password has been updated. Please log in with your new password.",
+                variant: "success"
             });
             setTimeout(() => {
                 navigate("/login", { replace: true });
             }, 1500);
         } catch (error) {
-            toast.error({
+            push({
                 title: "Password Reset Failed",
-                description: error?.data?.message || "Failed to reset password. Please try again.",
+                message: error?.data?.message || "Failed to reset password. Please try again.",
+                variant: "error"
             });
-            setServerError(
-                error?.data?.message || "Failed to reset password. Please try again."
-            );
         }
     };
 
@@ -163,12 +164,6 @@ const ResetPassword = () => {
                                 {successMessage && (
                                     <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">
                                         {successMessage}
-                                    </p>
-                                )}
-
-                                {serverError && (
-                                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
-                                        {serverError}
                                     </p>
                                 )}
 

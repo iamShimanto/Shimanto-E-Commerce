@@ -1,5 +1,5 @@
-import React from 'react'
 import SEO from '../components/seo/SEO';
+import Banner from '../components/home/Banner';
 
 const Home = () => {
   const homeSEO = {
@@ -14,7 +14,7 @@ const Home = () => {
   return (
     <>
       <SEO {...homeSEO} />
-      
+      <Banner />
     </>
   )
 }

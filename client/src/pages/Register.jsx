@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { LockKeyhole, Mail, ShoppingBag, User } from "lucide-react";
@@ -9,8 +8,7 @@ import { useToast } from "../hooks/useToast";
 
 const Register = () => {
     const navigate = useNavigate();
-    const [serverError, setServerError] = useState("");
-    const toast = useToast();
+    const { push } = useToast();
     const registerSEO = {
         title: "Register - Best Online Shopping Store",
         description:
@@ -43,7 +41,6 @@ const Register = () => {
     const password = watch("password");
 
     const onSubmit = async (data) => {
-        setServerError("");
 
         const payload = {
             fullName: data.fullName,
@@ -54,9 +51,10 @@ const Register = () => {
         try {
             await registerUser(payload).unwrap();
 
-            toast.success({
+            push({
                 title: "Registration successful",
                 message: "Your account has been created. Please verify your email.",
+                variant: "success"
             });
             reset();
             navigate("/verify-otp", {
@@ -64,14 +62,11 @@ const Register = () => {
                 replace: true,
             });
         } catch (error) {
-            toast.error({
+            push({
                 title: "Registration failed",
                 message: error?.data?.message || "An error occurred during registration",
+                variant: "error"
             });
-            setServerError(
-                error?.data?.message ||
-                "Registration failed. Please try again."
-            );
         }
     };
 
@@ -159,13 +154,6 @@ const Register = () => {
                                         value === password || "Passwords do not match",
                                 })}
                             />
-
-                            {serverError && (
-                                <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
-                                    {serverError}
-                                </p>
-                            )}
-
                             <button
                                 type="submit"
                                 disabled={isLoading}

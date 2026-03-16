@@ -19,6 +19,7 @@ const ForgetPassword = React.lazy(() => import("./pages/ForgetPassword"));
 const VerifyOtp = React.lazy(() => import("./pages/VerifyOtp"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 
+
 const App = () => {
   return (
     <Suspense fallback={<Spinner />}>
@@ -28,7 +29,6 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="products" element={<Products />} />
           <Route path="products/:slug" element={<ProductDetails />} />
-          <Route path="cart" element={<Cart />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
 
@@ -49,7 +49,14 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="cart"
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            }
+          />
           {/* Public Only Auth Routes */}
           <Route
             path="register"
