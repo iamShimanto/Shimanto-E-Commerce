@@ -50,7 +50,7 @@ export default function Header() {
   const [triggerLogout, { isLoading: logoutLoading }] = useLogoutMutation()
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const toast = useToast()
+  const { push } = useToast()
 
   const user = profileData?.data || profileData?.user || null;
   const isLoggedIn = !!user && !profileLoading;
@@ -108,23 +108,25 @@ export default function Header() {
         error?.data?.error ||
         (typeof error === "string" ? error : null) ||
         "Logout failed"
-      toast.error({
+      push({
         title: "Logout Error",
         message: message,
+        variant: "error"
       })
     } finally {
       dispatch(authApi.util.resetApiState())
       navigate("/", { replace: true })
-      toast.success({
+      push({
         title: "Logged out",
         message: "You have been successfully logged out.",
+        variant: "success"
       })
     }
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80 dark:bg-zinc-950/80">
+      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl transition-colors duration-300 dark:border-zinc-800/80 dark:bg-zinc-950">
         <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           {/* Left: Logo */}
           <Link

@@ -1,93 +1,70 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "theme";
+const STORAGE_KEY = "theme"; // 'light' | 'dark'
 
 function getSystemTheme() {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
+  return window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
-function getStoredPreference() {
-  if (typeof window === "undefined") return "system";
-
+function getStoredTheme() {
   try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === "light" || value === "dark" || value === "system"
-      ? value
-      : "system";
+    const v = localStorage.getItem(STORAGE_KEY);
+    return v === "light" || v === "dark" ? v : null;
   } catch {
-    return "system";
+    return null;
   }
 }
 
-function applyTheme(theme) {
-  const root = document.documentElement;
-  const isDark = theme === "dark";
-
-  root.classList.toggle("dark", isDark);
-  root.style.colorScheme = isDark ? "dark" : "light";
+function applyTheme(nextTheme) {
+  const isDark = nextTheme === "dark";
+  document.documentElement.classList.toggle("dark", isDark);
+  document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 }
 
 export function useTheme() {
-  const [preference, setPreference] = useState(getStoredPreference);
-  const [systemTheme, setSystemTheme] = useState(getSystemTheme);
+  const initialTheme = useMemo(() => {
+    if (typeof window === "undefined") return "light";
+    return getStoredTheme() ?? getSystemTheme();
+  }, []);
 
-  const theme = useMemo(() => {
-    return preference === "system" ? systemTheme : preference;
-  }, [preference, systemTheme]);
+  const [theme, setTheme] = useState(initialTheme);
 
   useEffect(() => {
     applyTheme(theme);
-
     try {
-      localStorage.setItem(STORAGE_KEY, preference);
+      localStorage.setItem(STORAGE_KEY, theme);
     } catch {
       // ignore
     }
-  }, [theme, preference]);
+  }, [theme]);
 
   useEffect(() => {
+    // If user hasn't explicitly chosen (no storage), track system changes
+    const stored = getStoredTheme();
+    if (stored) return;
+
     const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => setTheme(media.matches ? "dark" : "light");
 
-    const handleChange = (e) => {
-      setSystemTheme(e.matches ? "dark" : "light");
-    };
-
-    setSystemTheme(media.matches ? "dark" : "light");
-
-    if (media.addEventListener) {
-      media.addEventListener("change", handleChange);
-    } else {
-      media.addListener(handleChange);
-    }
+    if (media.addEventListener) media.addEventListener("change", onChange);
+    else media.addListener(onChange);
 
     return () => {
-      if (media.removeEventListener) {
-        media.removeEventListener("change", handleChange);
-      } else {
-        media.removeListener(handleChange);
-      }
+      if (media.removeEventListener)
+        media.removeEventListener("change", onChange);
+      else media.removeListener(onChange);
     };
-  }, []);
-
-  const setTheme = useCallback((next) => {
-    if (next === "light" || next === "dark" || next === "system") {
-      setPreference(next);
-    }
   }, []);
 
   const toggle = useCallback(() => {
-    setPreference((prev) => {
-      const current = prev === "system" ? getSystemTheme() : prev;
-      return current === "dark" ? "light" : "dark";
-    });
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 
   return {
     theme,
-    preference,
     setTheme,
     toggle,
     isDark: theme === "dark",

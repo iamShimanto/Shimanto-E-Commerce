@@ -5,3 +5,12 @@
   margin-inline: auto;
 }
 
+@layer base {
+  .dark {
+    --bg: #000000;
+  }
+
+  html {
+    height: 100%;
+  }
+}

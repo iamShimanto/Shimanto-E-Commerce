@@ -10,9 +10,8 @@ import { useToast } from "../hooks/useToast";
 const VerifyOtp = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [serverError, setServerError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-    const toast = useToast();
+    const { push } = useToast();
     const emailFromState = location.state?.email || "";
 
     const verifyOtpSEO = {
@@ -57,7 +56,6 @@ const VerifyOtp = () => {
     }, [emailFromState]);
 
     const onSubmit = async (data) => {
-        setServerError("");
         setSuccessMessage("");
         const payload = {
             email: data.email,
@@ -69,21 +67,20 @@ const VerifyOtp = () => {
             setSuccessMessage(
                 res?.message || "Email verified successfully. Redirecting to login..."
             );
-            toast.success({
+            push({
                 title: "OTP Verification successful",
                 message: "Your email has been verified. Redirecting to login...",
+                variant: "success"
             });
             setTimeout(() => {
                 navigate("/login", { replace: true });
             }, 1200);
         } catch (error) {
-            toast.error({
+            push({
                 title: "OTP Verification failed",
                 message: error?.data?.message || "An error occurred during OTP verification",
+                variant: "error"
             });
-            setServerError(
-                error?.data?.message || "OTP verification failed. Please try again."
-            );
         }
     };
 
@@ -156,12 +153,6 @@ const VerifyOtp = () => {
                                     },
                                 })}
                             />
-
-                            {serverError && (
-                                <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
-                                    {serverError}
-                                </p>
-                            )}
 
                             {successMessage && (
                                 <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">

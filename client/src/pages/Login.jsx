@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { LockKeyhole, Mail, ShoppingBag } from "lucide-react";
@@ -9,8 +8,7 @@ import { useToast } from "../hooks/useToast";
 
 const Login = () => {
     const navigate = useNavigate();
-    const [serverError, setServerError] = useState("");
-    const toast = useToast();
+    const { push } = useToast();
 
     const loginSEO = {
         title: "Login - Best Online Shopping Store",
@@ -38,20 +36,20 @@ const Login = () => {
     });
 
     const onSubmit = async (data) => {
-        setServerError("");
         try {
              await loginUser(data).unwrap();
-            toast.success({
+            push({
                 title: "Login successful",
                 message: "Welcome back! Redirecting to homepage...",
+                variant: "success"
             });
             navigate("/");
         } catch (error) {
-            toast.error({
+            push({
                 title: "Login failed",
                 message: error?.data?.message || "An error occurred during login",
+                variant: "error"
             });
-            setServerError(error?.data?.message || "An error occurred during login");
         }
     };
 
@@ -122,14 +120,6 @@ const Login = () => {
                                     Forgot password?
                                 </Link>
                             </div>
-
-                            {/* Server Error */}
-                            {serverError && (
-                                <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
-                                    {serverError}
-                                </p>
-                            )}
-
                             {/* Button */}
                             <button
                                 type="submit"

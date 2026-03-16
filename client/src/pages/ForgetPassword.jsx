@@ -4,13 +4,12 @@ import { useForm } from "react-hook-form";
 import { Mail, ShoppingBag } from "lucide-react";
 import Input from "../components/ui/Input";
 import SEO from "../components/seo/SEO";
-import { useToast } from "../hooks/useToast";
 import { useResetPasswordMutation } from "../api/auth/authApi";
+import { useToast } from "../hooks/useToast";
 
 const ForgetPassword = () => {
-    const [serverError, setServerError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-    const toast = useToast();
+    const { push } = useToast();
     const forgetPasswordSEO = {
         title: "Forgot Password - Best Online Shopping Store",
         description:
@@ -34,7 +33,6 @@ const ForgetPassword = () => {
     });
 
     const onSubmit = async (data) => {
-        setServerError("");
         setSuccessMessage("");
 
         try {
@@ -42,19 +40,17 @@ const ForgetPassword = () => {
             setSuccessMessage(
                 res?.message || "Password reset link has been sent to your email."
             );
-            toast.success({
+            push({
                 title: "Password Reset Link Sent",
                 message: "Please check your email for the password reset link.",
+                variant: "success"
             });
         } catch (error) {
-            toast.error({
+            push({
                 title: "Failed to Send Reset Link",
                 message: error?.data?.message || "An error occurred while sending the reset link.",
+                variant: "error"
             });
-            setServerError(
-                error?.data?.message ||
-                "Failed to send reset link. Please try again."
-            );
         }
     };
 
@@ -108,14 +104,6 @@ const ForgetPassword = () => {
                                     {successMessage}
                                 </p>
                             )}
-
-                            {/* Server Error */}
-                            {serverError && (
-                                <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
-                                    {serverError}
-                                </p>
-                            )}
-
                             <button
                                 type="submit"
                                 disabled={isLoading}

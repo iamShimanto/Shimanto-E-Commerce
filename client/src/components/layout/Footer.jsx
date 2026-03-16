@@ -1,4 +1,4 @@
-import { CreditCard, Github, Instagram, Youtube } from "lucide-react";
+import { CreditCard, Facebook, Github, Instagram } from "lucide-react";
 import { Link } from "react-router";
 
 const supportLinks = [
@@ -14,7 +14,7 @@ const companyLinks = [
 ];
 
 const shopLinks = [
-  { label: "My Account", href: "/account" },
+  { label: "My Account", href: "/profile" },
   { label: "Checkout", href: "/checkout" },
   { label: "Cart", href: "/cart" },
 ];
@@ -45,7 +45,7 @@ function FooterLinkGroup({ title, links }) {
 function SocialLink({ href, icon: Icon, label }) {
   return (
     <Link
-      href={href}
+      to={href}
       aria-label={label}
       target="_blank"
       rel="noreferrer"
@@ -87,7 +87,7 @@ export default function Footer() {
 
             <div className="mt-6 flex items-center gap-2">
               <SocialLink
-                href="https://github.com"
+                href="https://github.com/iamShimanto"
                 icon={Github}
                 label="GitHub"
               />
@@ -97,9 +97,9 @@ export default function Footer() {
                 label="Instagram"
               />
               <SocialLink
-                href="https://youtube.com"
-                icon={Youtube}
-                label="YouTube"
+                href="https://facebook.com/iamshimanto18"
+                icon={Facebook}
+                label="Facebook"
               />
             </div>
           </div>
