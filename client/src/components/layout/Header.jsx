@@ -172,7 +172,7 @@ export default function Header() {
               </button>
 
               <div
-                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl border border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${desktopCategoryOpen
+                className={`absolute left-0 top-[calc(100%+10px)] w-60 origin-top rounded-2xl bg-black border border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${desktopCategoryOpen
                   ? "pointer-events-auto visible translate-y-0 opacity-100"
                   : "pointer-events-none invisible -translate-y-2 opacity-0"
                   }`}

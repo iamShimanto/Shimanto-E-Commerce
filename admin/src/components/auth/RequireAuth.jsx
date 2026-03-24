@@ -28,7 +28,7 @@ export default function RequireAuth({ children }) {
 
     const role = String(user?.role || "").toLowerCase()
 
-    if (role !== "admin" && role !== "stuff") {
+    if (role !== "admin" && role !== "staff") {
         return (
             <Navigate
                 to="/login"
@@ -36,7 +36,7 @@ export default function RequireAuth({ children }) {
                 state={{
                     from: location,
                     unauthorized: true,
-                    message: "Only admin or stuff can access this dashboard.",
+                    message: "Only admin or staff can access this dashboard.",
                 }}
             />
         )

@@ -12,7 +12,7 @@ router.delete("/remove", asyncHandler(cart.removeFromCart));
 router.delete("/clear", asyncHandler(cart.clearCart));
 router.get(
   "/total-carts",
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   asyncHandler(cart.getAllCart),
 );
 

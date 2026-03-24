@@ -8,7 +8,7 @@ const RequireRole = lazy(() => import("./components/auth/RequireRole"))
 
 const DashboardEntry = lazy(() => import("./pages/DashboardEntry"))
 const DashboardHome = lazy(() => import("./pages/DashboardHome"))
-const StuffDashboard = lazy(() => import("./pages/StuffDashboard"))
+const staffDashboard = lazy(() => import("./pages/staffDashboard"))
 const Orders = lazy(() => import("./pages/Orders"))
 const Products = lazy(() => import("./pages/Products"))
 const ProductDetails = lazy(() => import("./pages/ProductDetails"))
@@ -59,10 +59,10 @@ export default function App() {
             />
 
             <Route
-              path="stuff-dashboard"
+              path="staff-dashboard"
               element={
-                <RequireRole roles={["stuff"]}>
-                  <StuffDashboard />
+                <RequireRole roles={["staff"]}>
+                  <staffDashboard />
                 </RequireRole>
               }
             />
@@ -75,7 +75,7 @@ export default function App() {
             <Route
               path="customers"
               element={
-                <RequireRole roles={["admin", "stuff"]}>
+                <RequireRole roles={["admin", "staff"]}>
                   <Customers />
                 </RequireRole>
               }
@@ -84,7 +84,7 @@ export default function App() {
             <Route
               path="subscription"
               element={
-                <RequireRole roles={["admin", "stuff"]}>
+                <RequireRole roles={["admin", "staff"]}>
                   <Subscription />
                 </RequireRole>
               }

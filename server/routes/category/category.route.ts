@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/create",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   upload.single("thumbnail"),
   asyncHandler(category.create),
 );
@@ -19,7 +19,7 @@ router.get("/all", asyncHandler(category.getAllCategory));
 router.put(
   "/update/:slug",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   upload.single("thumbnail"),
   asyncHandler(category.updateCategory),
 );

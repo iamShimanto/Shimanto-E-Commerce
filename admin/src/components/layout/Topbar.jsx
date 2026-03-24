@@ -7,7 +7,7 @@ import { useProfileQuery } from "../../api/auth/authApi"
 
 export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
     const { data: user } = useProfileQuery()
-    const isStuff = String(user?.role || "").toLowerCase() === "stuff"
+    const isstaff = String(user?.role || "").toLowerCase() === "staff"
 
     return (
         <header className="sticky top-0 z-40 border-b border-(--border) bg-(--surface)/85 backdrop-blur-xl">
@@ -26,10 +26,10 @@ export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                     <div className="hidden sm:block">
                         <div className="text-sm font-extrabold tracking-tight">
-                            {isStuff ? "Stuff Dashboard" : "Admin Dashboard"}
+                            {isstaff ? "staff Dashboard" : "Admin Dashboard"}
                         </div>
                         <div className="text-xs font-medium text-(--text-muted)">
-                            {isStuff
+                            {isstaff
                                 ? "Manage assigned operations with limited access"
                                 : "Manage products, orders and customers"}
                         </div>
@@ -67,7 +67,7 @@ export default function Topbar({ onOpenSidebar, isDark, onToggleTheme }) {
                             <img src={user?.avatar ? user?.avatar : "/default.jpg"} alt="profile" className="rounded-full h-8 w-8" />
                         </div>
                         <Link to={"/profile"} className="leading-tight">
-                            <div className="text-xs font-extrabold">{user?.fullName || (isStuff ? "Stuff" : "Admin")}</div>
+                            <div className="text-xs font-extrabold">{user?.fullName || (isstaff ? "staff" : "Admin")}</div>
                             <div className="text-[11px] font-semibold text-(--text-muted)">
                                 Online
                             </div>

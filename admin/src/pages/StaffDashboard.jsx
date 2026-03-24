@@ -23,11 +23,11 @@ function InfoCard({ title, value, Icon, tone = "blue" }) {
     )
 }
 
-export default function StuffDashboard() {
+export default function staffDashboard() {
     return (
         <div className="space-y-6">
             <div>
-                <div className="text-lg font-extrabold tracking-tight">Stuff Dashboard</div>
+                <div className="text-lg font-extrabold tracking-tight">staff Dashboard</div>
                 <div className="mt-1 text-sm font-semibold text-(--text-muted)">
                     Limited workspace for order and product operations.
                 </div>

@@ -443,7 +443,7 @@ export const updateRole: RequestHandler = async (req, res) => {
     typeof roleFromBody !== "undefined" ? roleFromBody : roleFromQuery;
   const role = String(roleRaw || "").trim();
 
-  const allowedRoles = new Set(["user", "stuff", "admin"]);
+  const allowedRoles = new Set(["user", "staff", "admin"]);
   if (!role || !allowedRoles.has(role)) {
     throw new ApiError(400, "Invalid role");
   }

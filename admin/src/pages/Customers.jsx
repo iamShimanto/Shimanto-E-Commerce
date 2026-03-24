@@ -160,7 +160,7 @@ export default function Customers() {
                     >
                         <option value="all">All roles</option>
                         <option value="user">User</option>
-                        <option value="stuff">Stuff</option>
+                        <option value="staff">staff</option>
                         <option value="admin">Admin</option>
                     </Select>
                 </div>
@@ -298,7 +298,7 @@ export default function Customers() {
                                                             disabled={isUpdatingRole}
                                                         >
                                                             <option value="user">user</option>
-                                                            <option value="stuff">stuff</option>
+                                                            <option value="staff">staff</option>
                                                             <option value="admin">admin</option>
                                                         </select>
 
@@ -324,7 +324,7 @@ export default function Customers() {
                                                         </Button>
                                                     </div>
                                                 ) : (
-                                                    <Pill variant={roleText === "admin" ? "purple" : roleText === "stuff" ? "blue" : "neutral"}>
+                                                    <Pill variant={roleText === "admin" ? "purple" : roleText === "staff" ? "blue" : "neutral"}>
                                                         {roleText}
                                                     </Pill>
                                                 )}
