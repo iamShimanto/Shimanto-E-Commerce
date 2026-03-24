@@ -8,7 +8,7 @@ const RequireRole = lazy(() => import("./components/auth/RequireRole"))
 
 const DashboardEntry = lazy(() => import("./pages/DashboardEntry"))
 const DashboardHome = lazy(() => import("./pages/DashboardHome"))
-const staffDashboard = lazy(() => import("./pages/StaffDashboard"))
+const StaffDashboard = lazy(() => import("./pages/StaffDashboard"))
 const Orders = lazy(() => import("./pages/Orders"))
 const Products = lazy(() => import("./pages/Products"))
 const ProductDetails = lazy(() => import("./pages/ProductDetails"))
@@ -62,7 +62,7 @@ export default function App() {
               path="staff-dashboard"
               element={
                 <RequireRole roles={["staff"]}>
-                  <staffDashboard />
+                  <StaffDashboard />
                 </RequireRole>
               }
             />
