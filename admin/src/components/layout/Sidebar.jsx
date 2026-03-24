@@ -32,8 +32,8 @@ const adminNavItems = [
     { to: "/settings", label: "Settings", Icon: Settings },
 ]
 
-const stuffNavItems = [
-    { to: "/stuff-dashboard", label: "Dashboard", Icon: LayoutDashboard },
+const staffNavItems = [
+    { to: "/staff-dashboard", label: "Dashboard", Icon: LayoutDashboard },
     { to: "/orders", label: "Orders", Icon: ClipboardList },
     { to: "/products", label: "Products", Icon: Boxes },
     { to: "/categories", label: "Categories", Icon: BarChart3 },
@@ -75,10 +75,10 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
     const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation()
 
     const role = String(user?.role || "").toLowerCase()
-    const isStuff = role === "stuff"
-    const navItems = isStuff ? stuffNavItems : adminNavItems
+    const isstaff = role === "staff"
+    const navItems = isstaff ? staffNavItems : adminNavItems
 
-    const displayName = user?.fullName || (isStuff ? "Stuff" : "Admin")
+    const displayName = user?.fullName || (isstaff ? "staff" : "Admin")
     const displayEmail = user?.email || "contact@shimanto.dev"
 
     const onLogout = async () => {
@@ -110,7 +110,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                         </div>
                         <div className="min-w-0">
                             <div className="truncate text-lg font-extrabold tracking-tight">
-                                {isStuff ? "Stuff" : "Admin"}
+                                {isstaff ? "staff" : "Admin"}
                             </div>
                             <div className="truncate text-xs font-medium text-(--text-muted)">
                                 Dashboard
@@ -194,7 +194,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                                 </div>
                                 <div className="min-w-0">
                                     <div className="truncate text-sm font-extrabold tracking-tight">
-                                        {isStuff ? "Shimanto Stuff" : "Shimanto Admin"}
+                                        {isstaff ? "Shimanto staff" : "Shimanto Admin"}
                                     </div>
                                     <div className="truncate text-xs font-medium text-(--text-muted)">
                                         Dashboard

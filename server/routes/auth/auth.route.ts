@@ -53,14 +53,14 @@ router.post("/refreshtoken", asyncHandler(auth.refreshToken));
 router.get(
   "/all-users",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   asyncHandler(auth.getAllUsers),
 );
 
 router.get(
   "/user/:id",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   asyncHandler(auth.getUserById),
 );
 

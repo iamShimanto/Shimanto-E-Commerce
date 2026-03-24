@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/create",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 6 },
@@ -24,7 +24,7 @@ router.get("/get-single-product/:slug", asyncHandler(product.getSingleProduct));
 router.put(
   "/update-product/:slug",
   authMiddleWare,
-  roleChecker("admin", "stuff"),
+  roleChecker("admin", "staff"),
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 6 },

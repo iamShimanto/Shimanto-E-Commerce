@@ -17,6 +17,6 @@ export default function DashboardEntry() {
 
     const role = String(user?.role || "").toLowerCase()
 
-    if (role === "stuff") return <Navigate to="/stuff-dashboard" replace />
+    if (role === "staff") return <Navigate to="/staff-dashboard" replace />
     return <Navigate to="/admin-dashboard" replace />
 }
