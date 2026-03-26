@@ -1,6 +1,7 @@
 import SEO from '../components/seo/SEO';
 import Banner from '../components/home/Banner';
 import Category from '../components/home/Category';
+import Featured from '../components/home/Featured';
 
 const Home = () => {
   const homeSEO = {
@@ -17,6 +18,7 @@ const Home = () => {
       <SEO {...homeSEO} />
       <Banner />
       <Category />
+      <Featured />
     </>
   )
 }

@@ -39,4 +39,6 @@ router.put(
   asyncHandler(product.toggleFeatured),
 );
 
+router.get("/featured", asyncHandler(product.getFeaturedProducts));
+
 export default router;

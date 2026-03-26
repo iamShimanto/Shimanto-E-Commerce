@@ -3,7 +3,6 @@ import { useGetCategoriesQuery } from "../../api/category/categoryApi";
 
 const Category = () => {
     const { data: apiCategories = [], isLoading, isError } = useGetCategoriesQuery();
-    console.log(apiCategories);
     const categories =
         Array.isArray(apiCategories) && apiCategories.length > 0
             ? apiCategories.map((category) => ({
@@ -13,7 +12,7 @@ const Category = () => {
                 image:
                     category?.thumbnail ||
                     "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200&auto=format&fit=crop",
-                description:`Explore our ${category.name} collection`,
+                description: `Explore our ${category.name} collection`,
             }))
             : [];
 
@@ -54,11 +53,11 @@ const Category = () => {
     return (
         <section className="w-full py-14 md:py-20">
             <div className="container px-4 sm:px-6 lg:px-8">
-                <div className="mb-8 text-center md:mb-12">
+                <div className="mb-8 text-start md:mb-12">
                     <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
                         Explore Our Categories
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-sm md:text-base">
+                    <p className="mt-3 max-w-2xl text-sm md:text-base">
                         Discover curated fashion collections from our latest categories.
                     </p>
                 </div>
