@@ -482,3 +482,14 @@ export const toggleFeatured: RequestHandler = async (req, res) => {
     existProduct,
   );
 };
+
+export const getFeaturedProducts : RequestHandler = async (req, res) => {
+  const cacheKey = `featured:products:v1`;
+  const cachedProducts = await getCache(cacheKey);
+  if (cachedProducts) {
+    return successResponse(res, "Featured Products", 200, cachedProducts);
+  }
+  const products = await productModel.find({ isFeatured: true });
+  await setCache(cacheKey, products, 60 * 60 * 24);
+  return successResponse(res, "Featured Products", 200, products);
+}

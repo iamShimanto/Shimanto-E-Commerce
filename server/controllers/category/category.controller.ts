@@ -5,13 +5,14 @@ import { ApiError } from "../../utils/ApiError";
 import { successResponse } from "../../utils/successResponse";
 import { generateUniqueSlug } from "../../utils/generateSlug";
 import { productModel } from "../../models/product.model";
+import { delCache, getCache, setCache } from "../../utils/redisCache";
 
 export const create: RequestHandler = async (req, res) => {
   const { name, description } = req.body;
 
   if (!name) throw new ApiError(400, "Category Name Is Required");
   if (!req.file) throw new ApiError(400, "Thumbnail Image is required");
-
+  const cacheKey = `categories:v1`;
   const existingCategory = await CategoryModel.findOne({ name });
   if (existingCategory) throw new ApiError(400, "Category Name already exists");
 
@@ -29,12 +30,18 @@ export const create: RequestHandler = async (req, res) => {
     thumbnail: imageRes.secure_url,
   });
   await category.save();
-
+  await delCache(cacheKey);
   successResponse(res, "Category Created Successfully", 201);
 };
 
 export const getAllCategory: RequestHandler = async (req, res) => {
+  const cacheKey = `categories:v1`;
+  const cachedCategories = await getCache(cacheKey);
+  if (cachedCategories) {
+    return successResponse(res, "All Categories", 200, cachedCategories);
+  }
   const categories = await CategoryModel.find({});
+  await setCache(cacheKey, categories, 60 * 60 * 24);
   return successResponse(res, "All Categories", 200, categories);
 };
 
@@ -42,7 +49,7 @@ export const updateCategory: RequestHandler = async (req, res) => {
   const { slug } = req.params;
   const { name, description, isActive } = req.body;
   const thumbnail = req.file;
-
+  const cacheKey = `categories:v1`; 
   if (!slug) throw new ApiError(400, "Category slug is required");
 
   const category = await CategoryModel.findOne({ slug });
@@ -90,6 +97,7 @@ export const updateCategory: RequestHandler = async (req, res) => {
   }
 
   await category.save();
+  await delCache(cacheKey);
   return successResponse(res, "Category Updated Successfully", 200, category);
 };
 

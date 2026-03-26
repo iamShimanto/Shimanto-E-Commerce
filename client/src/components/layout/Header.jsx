@@ -245,7 +245,7 @@ export default function Header() {
                 </button>
 
                 <div
-                  className={`absolute right-0 top-[calc(100%+10px)] w-52 origin-top-right rounded-2xl border border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${profileMenuOpen
+                  className={`absolute right-0 top-[calc(100%+10px)] w-52 origin-top-right rounded-2xl border bg-black border-zinc-200 p-2 shadow-xl transition-all duration-300 dark:border-zinc-800 ${profileMenuOpen
                     ? "pointer-events-auto visible translate-y-0 opacity-100"
                     : "pointer-events-none invisible -translate-y-2 opacity-0"
                     }`}
