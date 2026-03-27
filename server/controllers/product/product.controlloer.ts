@@ -472,7 +472,7 @@ export const toggleFeatured: RequestHandler = async (req, res) => {
   existProduct.isFeatured = !existProduct.isFeatured;
   await existProduct.save();
 
-  const cacheKey = `product:slug:${slug}`;
+  const cacheKey = `featured:products:v1`;
   await delCache(cacheKey);
   await delCacheByPrefix("products:list:v1:");
   return successResponse(
@@ -483,7 +483,7 @@ export const toggleFeatured: RequestHandler = async (req, res) => {
   );
 };
 
-export const getFeaturedProducts : RequestHandler = async (req, res) => {
+export const getFeaturedProducts: RequestHandler = async (req, res) => {
   const cacheKey = `featured:products:v1`;
   const cachedProducts = await getCache(cacheKey);
   if (cachedProducts) {
@@ -492,4 +492,4 @@ export const getFeaturedProducts : RequestHandler = async (req, res) => {
   const products = await productModel.find({ isFeatured: true });
   await setCache(cacheKey, products, 60 * 60 * 24);
   return successResponse(res, "Featured Products", 200, products);
-}
+};
