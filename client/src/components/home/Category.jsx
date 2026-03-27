@@ -71,7 +71,7 @@ const Category = () => {
                         {categories.map((category) => (
                             <Link
                                 key={category.id}
-                                to={`/shop?category=${category.slug}`}
+                                to={`/products?category=${category.slug}`}
                                 className="group relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                             >
                                 <div className="relative h-80 w-full overflow-hidden">

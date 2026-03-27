@@ -22,6 +22,7 @@ import { useDispatch } from "react-redux"
 
 const navLinks = [
   { label: "Home", href: "/" },
+  { label: "Products", href: "/products" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -42,7 +43,7 @@ export default function Header() {
     Array.isArray(apiCategories) && apiCategories.length > 0
       ? apiCategories.map((c) => ({
         label: c.name,
-        href: `/categories/${c.slug}`,
+        href: `/products?category=${c.slug}`,
       }))
       : [];
 
@@ -136,14 +137,14 @@ export default function Header() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-300">
               <Store size={18} />
             </span>
-          <div className="hidden sm:block">
-            <p className="text-sm font-semibold leading-none">
-              Shimanto Store
-            </p>
-            <p className="text-xs">
-              E-commerce
-            </p>
-          </div>
+            <div className="hidden sm:block">
+              <p className="text-sm font-semibold leading-none">
+                Shimanto Store
+              </p>
+              <p className="text-xs">
+                E-commerce
+              </p>
+            </div>
           </Link>
 
           {/* Middle: Desktop Nav */}
@@ -153,6 +154,12 @@ export default function Header() {
               className="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300"
             >
               Home
+            </Link>
+            <Link
+              to="/products"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300"
+            >
+              Products
             </Link>
 
             <div className="relative" ref={categoryRef}>
@@ -196,7 +203,7 @@ export default function Header() {
               </div>
             </div>
 
-            {navLinks.slice(1).map((item) => (
+            {navLinks.slice(2).map((item) => (
               <Link
                 key={item.label}
                 to={item.href}
