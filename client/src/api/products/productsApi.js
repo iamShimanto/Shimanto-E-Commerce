@@ -14,7 +14,24 @@ export const productsApi = createApi({
       providesTags: ["Product"],
       transformResponse: (response) => response?.data ?? [],
     }),
+
+    getAllProducts: builder.query({
+      query: ({ page = 1, limit = 12, search, category } = {}) => {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        params.set("isActive", "true");
+        if (search) params.set("search", search);
+        if (category) params.set("category", category);
+        return {
+          url: `/api/v1/product/all?${params.toString()}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["Product"],
+    }),
   }),
 });
 
-export const { useGetFeaturedProductsQuery } = productsApi;
+export const { useGetFeaturedProductsQuery, useGetAllProductsQuery } =
+  productsApi;
