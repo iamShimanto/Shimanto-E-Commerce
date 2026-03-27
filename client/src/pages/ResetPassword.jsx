@@ -85,44 +85,37 @@ const ResetPassword = () => {
         <>
             <SEO {...resetPasswordSEO} />
 
-            <section className="w-full px-4 py-10 text-slate-900 transition-colors duration-300 dark:text-slate-100">
+            <section className="w-full px-4 py-10 transition-colors duration-300">
                 <div className="mx-auto flex max-w-md items-center justify-center">
-                    <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20">
-                        {/* Logo */}
-                        <div className="mb-6 flex justify-center">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-black">
-                                <ShoppingBag size={22} />
-                            </div>
-                        </div>
+                    <div className="w-full rounded-3xl border p-8 shadow-xl">
 
                         {/* Title */}
                         <div className="mb-8 text-center">
-                            <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-white">
+                            <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border">
                                 <KeyRound size={24} />
                             </div>
 
                             <h2 className="text-3xl font-bold tracking-tight">
                                 Reset your password
                             </h2>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            <p className="mt-2 text-sm">
                                 Enter a new password for your account.
                             </p>
                         </div>
 
                         {!hasToken ? (
                             <div className="space-y-5">
-                                <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
+                                <p className="rounded-xl border px-4 py-3 text-sm">
                                     Invalid or missing reset link.
                                 </p>
 
-                                <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-                                    Request a new password reset link from the forgot password
-                                    page.
+                                <p className="text-center text-sm">
+                                    Request a new password reset link from the forgot password page.
                                 </p>
 
                                 <Link
                                     to="/forgot-password"
-                                    className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                                    className="inline-flex h-11 w-full items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-all duration-200"
                                 >
                                     Go to Forgot Password
                                 </Link>
@@ -162,7 +155,7 @@ const ResetPassword = () => {
                                 />
 
                                 {successMessage && (
-                                    <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                    <p className="rounded-xl border px-4 py-3 text-sm">
                                         {successMessage}
                                     </p>
                                 )}
@@ -170,19 +163,16 @@ const ResetPassword = () => {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                                    className="inline-flex cursor-pointer h-11 w-full items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-all duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                                 >
                                     {isLoading ? "Updating password..." : "Reset Password"}
                                 </button>
                             </form>
                         )}
 
-                        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <p className="mt-6 text-center text-sm">
                             Remember your password?{" "}
-                            <Link
-                                to="/login"
-                                className="font-semibold text-slate-900 hover:underline dark:text-white"
-                            >
+                            <Link to="/login" className="font-semibold hover:underline">
                                 Back to Login
                             </Link>
                         </p>

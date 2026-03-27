@@ -37,7 +37,7 @@ const Login = () => {
 
     const onSubmit = async (data) => {
         try {
-             await loginUser(data).unwrap();
+            await loginUser(data).unwrap();
             push({
                 title: "Login successful",
                 message: "Welcome back! Redirecting to homepage...",
@@ -56,13 +56,12 @@ const Login = () => {
     return (
         <>
             <SEO {...loginSEO} />
-
-            <section className="w-full px-4 py-10 text-slate-900 transition-colors duration-300 dark:text-slate-100">
+            <section className="w-full px-4 py-10 transition-colors duration-300">
                 <div className="mx-auto flex max-w-md items-center justify-center">
-                    <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20">
+                    <div className="w-full rounded-3xl border p-8 shadow-xl">
                         {/* Logo */}
                         <div className="mb-6 flex justify-center">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-black">
+                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border">
                                 <ShoppingBag size={22} />
                             </div>
                         </div>
@@ -70,7 +69,7 @@ const Login = () => {
                         {/* Title */}
                         <div className="mb-8 text-center">
                             <h2 className="text-3xl font-bold tracking-tight">Login</h2>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            <p className="mt-2 text-sm">
                                 Enter your email and password to access your account.
                             </p>
                         </div>
@@ -115,28 +114,26 @@ const Login = () => {
                             <div className="flex justify-end">
                                 <Link
                                     to="/forget-password"
-                                    className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                                    className="text-sm font-medium transition hover:underline"
                                 >
                                     Forgot password?
                                 </Link>
                             </div>
+
                             {/* Button */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                                className="inline-flex cursor-pointer h-11 w-full items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-all duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isLoading ? "Signing in..." : "Login"}
                             </button>
                         </form>
 
                         {/* Signup */}
-                        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <p className="mt-6 text-center text-sm">
                             Don&apos;t have an account?{" "}
-                            <Link
-                                to="/register"
-                                className="font-semibold text-slate-900 hover:underline dark:text-white"
-                            >
+                            <Link to="/register" className="font-semibold hover:underline">
                                 Sign up
                             </Link>
                         </p>
