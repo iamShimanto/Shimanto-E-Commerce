@@ -16,13 +16,17 @@ export const productsApi = createApi({
     }),
 
     getAllProducts: builder.query({
-      query: ({ page = 1, limit = 12, search, category } = {}) => {
+      query: ({ page = 1, limit = 12, search, category, sortPrice } = {}) => {
         const params = new URLSearchParams();
+
         params.set("page", String(page));
         params.set("limit", String(limit));
         params.set("isActive", "true");
+
         if (search) params.set("search", search);
         if (category) params.set("category", category);
+        if (sortPrice) params.set("sortPrice", sortPrice); // "asc" or "desc"
+
         return {
           url: `/api/v1/product/all?${params.toString()}`,
           method: "GET",

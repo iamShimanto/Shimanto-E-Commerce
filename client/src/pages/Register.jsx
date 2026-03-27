@@ -74,20 +74,18 @@ const Register = () => {
         <>
             <SEO {...registerSEO} />
 
-            <section className="w-full px-4 py-10 text-slate-900 transition-colors duration-300 dark:text-slate-100">
+            <section className="w-full px-4 py-10 transition-colors duration-300">
                 <div className="mx-auto flex max-w-md items-center justify-center">
-                    <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20">
+                    <div className="w-full rounded-3xl border p-8 shadow-xl">
                         <div className="mb-6 flex justify-center">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-black">
+                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border">
                                 <ShoppingBag size={22} />
                             </div>
                         </div>
 
                         <div className="mb-8 text-center">
-                            <h2 className="text-3xl font-bold tracking-tight">
-                                Create Account
-                            </h2>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            <h2 className="text-3xl font-bold tracking-tight">Create Account</h2>
+                            <p className="mt-2 text-sm">
                                 Enter your details below to create your account.
                             </p>
                         </div>
@@ -154,21 +152,19 @@ const Register = () => {
                                         value === password || "Passwords do not match",
                                 })}
                             />
+
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                                className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-all duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isLoading ? "Creating account..." : "Sign Up"}
                             </button>
                         </form>
 
-                        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <p className="mt-6 text-center text-sm">
                             Already have an account?{" "}
-                            <Link
-                                to="/login"
-                                className="font-semibold text-slate-900 hover:underline dark:text-white"
-                            >
+                            <Link to="/login" className="font-semibold hover:underline">
                                 Login
                             </Link>
                         </p>

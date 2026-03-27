@@ -15,6 +15,10 @@
   }
 }
 
+.dark select , .dark input{
+  background-color: #000000;
+}
+
 /* ── Splide Featured Slider Overrides ────────────────────────── */
 .featured-section .splide__pagination {
   bottom: -2rem;

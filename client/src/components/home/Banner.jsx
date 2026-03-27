@@ -115,7 +115,7 @@ export default function Banner() {
                                 </p>
 
                                 <Link
-                                    to="/shop"
+                                    to="/products"
                                     className={`block w-fit rounded-lg bg-white px-6 py-3 font-semibold text-black transition-all duration-700 ease-out hover:bg-gray-200 ${
                                         i === index
                                             ? "translate-y-0 opacity-100"

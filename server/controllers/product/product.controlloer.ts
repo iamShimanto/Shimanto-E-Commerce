@@ -164,6 +164,7 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   const category = req.query.category as string;
   const search = req.query.search as string;
   const isActiveQuery = req.query.isActive as string | undefined;
+  const sortPrice = req.query.sortPrice as string | undefined; // asc | desc
   const skip = (page - 1) * limit;
 
   let isActiveFilter: boolean | undefined = true;
@@ -179,10 +180,22 @@ export const getAllProducts: RequestHandler = async (req, res) => {
     }
   }
 
+  let sortStage: Record<string, 1 | -1> = { createdAt: -1 };
+
+  if (typeof sortPrice !== "undefined") {
+    if (sortPrice === "asc") {
+      sortStage = { price: 1 };
+    } else if (sortPrice === "desc") {
+      sortStage = { price: -1 };
+    } else {
+      throw new ApiError(400, "sortPrice must be asc or desc");
+    }
+  }
+
   const activeKey =
     typeof isActiveFilter === "boolean" ? String(isActiveFilter) : "all";
 
-  const cacheKey = `products:list:v1:page=${page}:limit=${limit}:cat=${category || "all"}:q=${search || "none"}:active=${activeKey}`;
+  const cacheKey = `products:list:v2:page=${page}:limit=${limit}:cat=${category || "all"}:q=${search || "none"}:active=${activeKey}:sortPrice=${sortPrice || "default"}`;
 
   const cached = await getCache(cacheKey);
   if (cached) {
@@ -194,7 +207,6 @@ export const getAllProducts: RequestHandler = async (req, res) => {
       $match:
         typeof isActiveFilter === "boolean" ? { isActive: isActiveFilter } : {},
     },
-
     {
       $lookup: {
         from: "categories",
@@ -221,7 +233,7 @@ export const getAllProducts: RequestHandler = async (req, res) => {
   }
 
   pipeline.push(
-    { $sort: { createdAt: -1 } },
+    { $sort: sortStage },
     { $skip: skip },
     { $limit: limit },
   );
