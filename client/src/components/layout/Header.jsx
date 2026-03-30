@@ -53,8 +53,20 @@ export default function Header() {
   const navigate = useNavigate()
   const { push } = useToast()
 
+  const [headerSearch, setHeaderSearch] = useState("");
   const user = profileData?.data || profileData?.user || null;
   const isLoggedIn = !!user && !profileLoading;
+
+  const handleHeaderSearch = (event) => {
+    event.preventDefault();
+    const query = headerSearch.trim();
+    if (query.length > 0) {
+      navigate(`/products?search=${encodeURIComponent(query)}`);
+    } else {
+      navigate("/products");
+    }
+    setMobileOpen(false); // close mobile drawer if open
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -216,16 +228,25 @@ export default function Header() {
 
           {/* Right: Desktop Actions */}
           <div className="hidden items-center gap-2 lg:flex">
-            <form className="relative">
+            <form className="relative" onSubmit={handleHeaderSearch}>
               <Search
                 size={16}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
               />
               <input
                 type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
                 placeholder="Search products..."
-                className="h-10 w-64 rounded-xl border border-zinc-200 pl-9 pr-4 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
+                className="h-10 w-64 rounded-xl border border-zinc-200 pl-9 pr-10 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
               />
+              <button
+                type="submit"
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-white cursor-pointer"
+                aria-label="Search"
+              >
+                Search
+              </button>
             </form>
 
             <Link
@@ -352,16 +373,24 @@ export default function Header() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <form className="relative mb-5">
+          <form className="relative mb-5" onSubmit={handleHeaderSearch}>
             <Search
               size={16}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
             />
             <input
               type="text"
-              placeholder="Search products..."
-              className="h-11 w-full rounded-xl border border-zinc-200 pl-9 pr-4 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
+              value={headerSearch}
+              onChange={(e) => setHeaderSearch(e.target.value)}
+              className="h-11 w-full rounded-xl border border-zinc-200 pl-9 pr-20 text-sm outline-none transition-all duration-300 focus:border-zinc-400"
             />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-3 py-1.5 text-xs font-semibold text-white"
+              aria-label="Search"
+            >
+              Search
+            </button>
           </form>
 
           <nav className="space-y-2">
@@ -371,6 +400,13 @@ export default function Header() {
               onClick={closeMobileDrawer}
             >
               Home
+            </Link>
+            <Link
+              to="/products"
+              className="block rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
+              onClick={closeMobileDrawer}
+            >
+              Products
             </Link>
 
             <div className="rounded-2xl border border-zinc-200 p-2 dark:border-zinc-800">

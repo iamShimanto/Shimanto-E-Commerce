@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import {
   Search,
   X,
@@ -12,6 +12,7 @@ import { useGetAllProductsQuery } from "../api/products/productsApi";
 import { useGetCategoriesQuery } from "../api/category/categoryApi";
 import SEO from "../components/seo/SEO";
 import { ProductGridSkeleton } from "../components/ui/ProductGridSkeleton";
+import { ProductCard } from "../components/product/ProductCard";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -27,12 +28,8 @@ function useDebounce(value, delay = 400) {
   return debounced;
 }
 
-/* ═══════════════════════════════════════════════════ */
-/*                  PRODUCTS PAGE                      */
-/* ═══════════════════════════════════════════════════ */
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-
   /* ── state from URL ── */
   const categoryFromUrl = searchParams.get("category") || "";
   const pageFromUrl = parseInt(searchParams.get("page")) || 1;
@@ -47,7 +44,6 @@ const Products = () => {
 
   const debouncedSearch = useDebounce(searchInput);
 
-  /* ── keep URL in sync ── */
   const updateParams = useCallback(
     (overrides = {}) => {
       const next = {
@@ -69,7 +65,6 @@ const Products = () => {
     [activeCategory, debouncedSearch, currentPage, sortBy, setSearchParams]
   );
 
-  /* reset page on search / category / sort change */
   useEffect(() => {
     setCurrentPage(1);
     updateParams({
@@ -93,7 +88,6 @@ const Products = () => {
     setSortBy(sortByFromUrl);
   }, [categoryFromUrl, pageFromUrl, sortByFromUrl]);
 
-  /* optional: lock body scroll when drawer open */
   useEffect(() => {
     if (showMobileFilters) {
       document.body.style.overflow = "hidden";
@@ -151,9 +145,6 @@ const Products = () => {
 
   const hasFilters = debouncedSearch || activeCategory || sortBy;
 
-  /* ═══════════════════════════════════════════════════ */
-  /*                      RENDER                        */
-  /* ═══════════════════════════════════════════════════ */
   return (
     <>
       <SEO
@@ -234,11 +225,10 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={() => setActiveCategory("")}
-                    className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                      !activeCategory
-                        ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                    }`}
+                    className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
+                      ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                      }`}
                   >
                     All
                   </button>
@@ -252,11 +242,10 @@ const Products = () => {
                         key={cat._id || cat.id}
                         type="button"
                         onClick={() => handleCategoryClick(slug)}
-                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                          isActive
-                            ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                        }`}
+                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
+                          ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                          }`}
                       >
                         {cat.name}
                       </button>
@@ -291,17 +280,15 @@ const Products = () => {
 
           {/* Mobile left drawer */}
           <div
-            className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
-              showMobileFilters
-                ? "pointer-events-auto bg-black/40 opacity-100"
-                : "pointer-events-none bg-black/0 opacity-0"
-            }`}
+            className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${showMobileFilters
+              ? "pointer-events-auto bg-black/40 opacity-100"
+              : "pointer-events-none bg-black/0 opacity-0"
+              }`}
             onClick={() => setShowMobileFilters(false)}
           >
             <div
-              className={`absolute left-0 top-0 h-full w-[85%] max-w-[320px] overflow-hidden bg-black text-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 ${
-                showMobileFilters ? "translate-x-0" : "-translate-x-full"
-              }`}
+              className={`absolute left-0 top-0 h-full w-[85%] max-w-[320px] overflow-hidden bg-black text-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 ${showMobileFilters ? "translate-x-0" : "-translate-x-full"
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
@@ -344,11 +331,10 @@ const Products = () => {
                       <button
                         type="button"
                         onClick={() => setActiveCategory("")}
-                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                          !activeCategory
-                            ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                        }`}
+                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
+                          ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                          }`}
                       >
                         All
                       </button>
@@ -362,11 +348,10 @@ const Products = () => {
                             key={cat._id || cat.id}
                             type="button"
                             onClick={() => handleCategoryClick(slug)}
-                            className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                              isActive
-                                ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                                : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                            }`}
+                            className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
+                              ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                              }`}
                           >
                             {cat.name}
                           </button>
@@ -463,9 +448,8 @@ const Products = () => {
           {/* ── Product Grid ── */}
           {!isLoading && !isError && products.length > 0 && (
             <div
-              className={`grid grid-cols-1 gap-6 transition-opacity duration-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${
-                isFetching ? "pointer-events-none opacity-50" : "opacity-100"
-              }`}
+              className={`grid grid-cols-1 gap-6 transition-opacity duration-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "pointer-events-none opacity-50" : "opacity-100"
+                }`}
             >
               {products.map((product) => (
                 <ProductCard key={product._id || product.slug} product={product} />
@@ -484,85 +468,6 @@ const Products = () => {
         </div>
       </section>
     </>
-  );
-};
-
-/* ═══════════════════════════════════════════════════ */
-/*                  PRODUCT CARD                       */
-/* ═══════════════════════════════════════════════════ */
-const ProductCard = ({ product }) => {
-  const thumbnail =
-    product.thumbnail ||
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=900&auto=format&fit=crop";
-
-  const hasDiscount = Number(product.discountPercentage) > 0;
-  const price = Number(product.price || 0);
-  const discount = Number(product.discountPercentage || 0);
-  const discountedPrice = hasDiscount ? price - (price * discount) / 100 : price;
-  const categoryName = product.category?.name || "";
-
-  return (
-    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
-      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 dark:bg-zinc-900">
-        <img
-          src={thumbnail}
-          alt={product.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-        />
-
-        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-black/5 to-transparent opacity-70" />
-
-        {hasDiscount && (
-          <div className="absolute left-4 top-4 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
-            -{discount}%
-          </div>
-        )}
-
-        {categoryName && (
-          <div className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-800 shadow-sm backdrop-blur-sm dark:bg-black/70 dark:text-gray-200">
-            {categoryName}
-          </div>
-        )}
-
-        <div className="absolute inset-x-0 bottom-4 flex translate-y-4 justify-center px-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <Link
-            to={`/products/${product.slug}`}
-            className="inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100"
-          >
-            View Details
-          </Link>
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-1 text-lg font-bold text-gray-900 dark:text-white">
-          <Link
-            to={`/products/${product.slug}`}
-            className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            {product.title}
-          </Link>
-        </h3>
-
-        {categoryName && (
-          <p className="mt-1 line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
-            {categoryName}
-          </p>
-        )}
-
-        <div className="mt-auto flex items-end gap-2 pt-5">
-          <span className="text-xl font-bold text-gray-900 dark:text-white">
-            ৳ {discountedPrice.toFixed(2)}
-          </span>
-          {hasDiscount && (
-            <span className="text-sm font-medium text-gray-400 line-through dark:text-gray-500">
-              ৳ {price.toFixed(2)}
-            </span>
-          )}
-        </div>
-      </div>
-    </article>
   );
 };
 
