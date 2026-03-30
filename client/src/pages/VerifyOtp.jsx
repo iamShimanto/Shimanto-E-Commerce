@@ -88,30 +88,20 @@ const VerifyOtp = () => {
         <>
             <SEO {...verifyOtpSEO} />
 
-            <section className="w-full px-4 py-10 text-slate-900 transition-colors duration-300 dark:text-slate-100">
+            <section className="w-full px-4 py-10 transition-colors duration-300">
                 <div className="mx-auto flex max-w-md items-center justify-center">
-                    <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20">
-                        <div className="mb-6 flex justify-center">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-black">
-                                <ShoppingBag size={22} />
-                            </div>
-                        </div>
-
+                    <div className="w-full rounded-3xl border p-8 shadow-xl">
                         <div className="mb-8 text-center">
-                            <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-white">
+                            <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border">
                                 <MailCheck size={24} />
                             </div>
 
-                            <h2 className="text-3xl font-bold tracking-tight">
-                                Verify OTP
-                            </h2>
+                            <h2 className="text-3xl font-bold tracking-tight">Verify OTP</h2>
 
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            <p className="mt-2 text-sm">
                                 We sent a verification code to{" "}
-                                <span className="font-medium text-slate-800 dark:text-slate-200">
-                                    {maskedEmail || "your email"}
-                                </span>
-                                . Enter the OTP below to verify your account.
+                                <span className="font-medium">{maskedEmail || "your email"}</span>.
+                                Enter the OTP below to verify your account.
                             </p>
                         </div>
 
@@ -155,7 +145,7 @@ const VerifyOtp = () => {
                             />
 
                             {successMessage && (
-                                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                <p className="rounded-xl border px-4 py-3 text-sm">
                                     {successMessage}
                                 </p>
                             )}
@@ -163,29 +153,23 @@ const VerifyOtp = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                                className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-all duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isLoading ? "Verifying..." : "Verify OTP"}
                             </button>
                         </form>
 
-                        <div className="mt-6 space-y-2 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <div className="mt-6 space-y-2 text-center text-sm">
                             <p>
                                 Wrong email?{" "}
-                                <Link
-                                    to="/register"
-                                    className="font-semibold text-slate-900 hover:underline dark:text-white"
-                                >
+                                <Link to="/register" className="font-semibold hover:underline">
                                     Register again
                                 </Link>
                             </p>
 
                             <p>
                                 Already verified?{" "}
-                                <Link
-                                    to="/login"
-                                    className="font-semibold text-slate-900 hover:underline dark:text-white"
-                                >
+                                <Link to="/login" className="font-semibold hover:underline">
                                     Back to Login
                                 </Link>
                             </p>

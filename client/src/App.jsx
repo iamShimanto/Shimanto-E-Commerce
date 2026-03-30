@@ -4,6 +4,10 @@ import { Spinner } from "./components/ui/SkeletonLoader";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import PublicOnlyRoute from "./components/routes/PublicOnlyRoute";
 import Layout from "./components/layout/Index";
+import Faq from "./pages/Faq";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Careers from "./pages/Careers";
 
 const Home = React.lazy(() => import("./pages/Home"));
 const Products = React.lazy(() => import("./pages/Products"));
@@ -31,6 +35,10 @@ const App = () => {
           <Route path="products/:slug" element={<ProductDetails />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="faq" element={<Faq />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="careers" element={<Careers />} />
 
           {/* Protected Routes */}
           <Route

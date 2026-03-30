@@ -1,59 +1,104 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Link, useSearchParams } from "react-router";
-import { Search, X, ChevronLeft, ChevronRight, SlidersHorizontal, PackageOpen } from "lucide-react";
+import { useSearchParams } from "react-router";
+import {
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  PackageOpen,
+} from "lucide-react";
 import { useGetAllProductsQuery } from "../api/products/productsApi";
 import { useGetCategoriesQuery } from "../api/category/categoryApi";
 import SEO from "../components/seo/SEO";
-import { useDebounce } from "../hooks/useDebounce";
+import { ProductGridSkeleton } from "../components/ui/ProductGridSkeleton";
+import { ProductCard } from "../components/product/ProductCard";
 
 const PRODUCTS_PER_PAGE = 12;
 
+/* ─── debounce helper ─── */
+function useDebounce(value, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+
+  return debounced;
+}
+
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-
   /* ── state from URL ── */
   const categoryFromUrl = searchParams.get("category") || "";
   const pageFromUrl = parseInt(searchParams.get("page")) || 1;
+  const sortByFromUrl = searchParams.get("sortBy") || "";
+  const searchFromUrl = searchParams.get("search") || "";
 
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(searchFromUrl);
   const [activeCategory, setActiveCategory] = useState(categoryFromUrl);
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const [sortBy, setSortBy] = useState(sortByFromUrl);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const debouncedSearch = useDebounce(searchInput);
 
-  /* ── keep URL in sync ── */
   const updateParams = useCallback(
     (overrides = {}) => {
       const next = {
         category: overrides.category ?? activeCategory,
         search: overrides.search ?? debouncedSearch,
         page: String(overrides.page ?? currentPage),
+        sortBy: overrides.sortBy ?? sortBy,
       };
+
       const params = new URLSearchParams();
+
       if (next.category) params.set("category", next.category);
       if (next.search) params.set("search", next.search);
+      if (next.sortBy) params.set("sortBy", next.sortBy);
       if (next.page && next.page !== "1") params.set("page", next.page);
+
       setSearchParams(params, { replace: true });
     },
-    [activeCategory, debouncedSearch, currentPage, setSearchParams]
+    [activeCategory, debouncedSearch, currentPage, sortBy, setSearchParams]
   );
 
-  /* reset to page 1 on search / category change */
   useEffect(() => {
     setCurrentPage(1);
-    updateParams({ search: debouncedSearch, category: activeCategory, page: 1 });
+    updateParams({
+      search: debouncedSearch,
+      category: activeCategory,
+      sortBy,
+      page: 1,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, activeCategory]);
+  }, [debouncedSearch, activeCategory, sortBy]);
 
   useEffect(() => {
     updateParams({ page: currentPage });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  /* sync URL → state on first load */
+  /* sync URL → state */
   useEffect(() => {
-    if (categoryFromUrl) setActiveCategory(categoryFromUrl);
-  }, [categoryFromUrl]);
+    setActiveCategory(categoryFromUrl);
+    setCurrentPage(pageFromUrl);
+    setSortBy(sortByFromUrl);
+  }, [categoryFromUrl, pageFromUrl, sortByFromUrl]);
+
+  useEffect(() => {
+    if (showMobileFilters) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showMobileFilters]);
 
   /* ── API queries ── */
   const { data: categoriesRaw = [], isLoading: catLoading } =
@@ -74,6 +119,7 @@ const Products = () => {
     limit: PRODUCTS_PER_PAGE,
     search: debouncedSearch || undefined,
     category: activeCategory || undefined,
+    sortPrice: sortBy || undefined,
   });
 
   const products = response?.products ?? [];
@@ -92,10 +138,12 @@ const Products = () => {
   const clearFilters = () => {
     setSearchInput("");
     setActiveCategory("");
+    setSortBy("");
     setCurrentPage(1);
+    setShowMobileFilters(false);
   };
 
-  const hasFilters = debouncedSearch || activeCategory;
+  const hasFilters = debouncedSearch || activeCategory || sortBy;
 
   return (
     <>
@@ -109,13 +157,12 @@ const Products = () => {
       <section className="min-h-screen w-full pb-20 pt-10 md:pt-14">
         <div className="container px-4 sm:px-6 lg:px-8">
           {/* ── Page Header ── */}
-          <div className="mb-10 md:mb-14">
+          <div className="mb-5 md:mb-8">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
               All Products
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-gray-600 md:text-base dark:text-gray-400">
-              Discover our curated collection — filter by category or search to
-              find your perfect style.
+              Discover our carefully selected collection of products. Filter by category or use search to find exactly what you are looking for.
             </p>
           </div>
 
@@ -144,68 +191,217 @@ const Products = () => {
               )}
             </div>
 
-            {/* Category chips */}
+            {/* Mobile filter button */}
             {!catLoading && categories.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2.5">
-                <SlidersHorizontal className="mr-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <div className="flex items-center justify-between gap-3 md:hidden">
                 <button
                   type="button"
-                  onClick={() => setActiveCategory("")}
-                  className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
-                      ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                    }`}
+                  onClick={() => setShowMobileFilters(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-gray-200 dark:hover:bg-zinc-900"
                 >
-                  All
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters
                 </button>
-                {categories.map((cat) => {
-                  const slug = cat.slug;
-                  const isActive = activeCategory === slug;
-                  return (
-                    <button
-                      key={cat._id || cat.id}
-                      type="button"
-                      onClick={() => handleCategoryClick(slug)}
-                      className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
-                          ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                        }`}
-                    >
-                      {cat.name}
-                    </button>
-                  );
-                })}
 
                 {hasFilters && (
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="ml-2 flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70"
+                    className="inline-flex items-center gap-1 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70"
                   >
-                    <X className="h-3.5 w-3.5" /> Clear
+                    <X className="h-4 w-4" />
+                    Clear
                   </button>
                 )}
               </div>
             )}
+
+            {/* Desktop filters */}
+            {!catLoading && categories.length > 0 && (
+              <div className="hidden md:flex md:flex-wrap md:items-center md:justify-between md:gap-4">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <SlidersHorizontal className="mr-1 h-4 w-4 text-gray-500 dark:text-gray-400" />
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory("")}
+                    className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
+                      ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                      }`}
+                  >
+                    All
+                  </button>
+
+                  {categories.map((cat) => {
+                    const slug = cat.slug;
+                    const isActive = activeCategory === slug;
+
+                    return (
+                      <button
+                        key={cat._id || cat.id}
+                        type="button"
+                        onClick={() => handleCategoryClick(slug)}
+                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
+                          ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                          }`}
+                      >
+                        {cat.name}
+                      </button>
+                    );
+                  })}
+
+                  {hasFilters && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="ml-2 flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70"
+                    >
+                      <X className="h-3.5 w-3.5" /> Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="w-56">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-6 py-3.5 text-sm shadow-sm outline-none transition-all duration-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-zinc-600 dark:focus:ring-zinc-800"
+                  >
+                    <option value="">Newest</option>
+                    <option value="asc">Price: Low to High</option>
+                    <option value="desc">Price: High to Low</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile left drawer */}
+          <div
+            className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${showMobileFilters
+              ? "pointer-events-auto bg-black/40 opacity-100"
+              : "pointer-events-none bg-black/0 opacity-0"
+              }`}
+            onClick={() => setShowMobileFilters(false)}
+          >
+            <div
+              className={`absolute left-0 top-0 h-full w-[85%] max-w-[320px] overflow-hidden bg-black text-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 ${showMobileFilters ? "translate-x-0" : "-translate-x-full"
+                }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+                <h3 className="text-base font-bold text-white">
+                  Filters
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowMobileFilters(false)}
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
+                  aria-label="Close filters"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="h-[calc(100%-82px)] overflow-y-auto px-5 py-5 pb-28">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="mb-3 text-sm font-semibold text-white">
+                      Sort By
+                    </h4>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-black text-white text-sm shadow-sm outline-none transition-all duration-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-zinc-600 dark:focus:ring-zinc-800"
+                    >
+                      <option value="">Newest</option>
+                      <option value="asc">Price: Low to High</option>
+                      <option value="desc">Price: High to Low</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-3 text-sm font-semibold text-white">
+                      Categories
+                    </h4>
+
+                    <div className="flex flex-wrap gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveCategory("")}
+                        className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
+                          ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                          }`}
+                      >
+                        All
+                      </button>
+
+                      {categories.map((cat) => {
+                        const slug = cat.slug;
+                        const isActive = activeCategory === slug;
+
+                        return (
+                          <button
+                            key={cat._id || cat.id}
+                            type="button"
+                            onClick={() => handleCategoryClick(slug)}
+                            className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
+                              ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
+                              }`}
+                          >
+                            {cat.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="flex-1 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-200 transition hover:bg-gray-50 dark:border-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-900"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileFilters(false)}
+                    className="flex-1 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── Results count ── */}
           {!isLoading && !isError && (
             <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-              Showing{" "}
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {products.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {pagination.total}
-              </span>{" "}
-              products
+              Showing <span className="font-semibold">{products.length}</span> of{" "}
+              <span className="font-semibold">{pagination.total}</span> products
               {activeCategory && (
-                <> in <span className="font-semibold text-gray-900 dark:text-white capitalize">{activeCategory.replace(/-/g, " ")}</span></>
+                <>
+                  {" "}
+                  in{" "}
+                  <span className="font-semibold capitalize">
+                    {activeCategory.replace(/-/g, " ")}
+                  </span>
+                </>
               )}
               {debouncedSearch && (
-                <> for "<span className="font-semibold text-gray-900 dark:text-white">{debouncedSearch}</span>"</>
+                <>
+                  {" "}
+                  for "<span className="font-semibold">{debouncedSearch}</span>"
+                </>
               )}
             </p>
           )}
@@ -252,7 +448,7 @@ const Products = () => {
           {/* ── Product Grid ── */}
           {!isLoading && !isError && products.length > 0 && (
             <div
-              className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity duration-300 ${isFetching ? "pointer-events-none opacity-50" : "opacity-100"
+              className={`grid grid-cols-1 gap-6 transition-opacity duration-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "pointer-events-none opacity-50" : "opacity-100"
                 }`}
             >
               {products.map((product) => (
@@ -272,86 +468,6 @@ const Products = () => {
         </div>
       </section>
     </>
-  );
-};
-
-/* ═══════════════════════════════════════════════════ */
-/*                  PRODUCT CARD                       */
-/* ═══════════════════════════════════════════════════ */
-const ProductCard = ({ product }) => {
-  const thumbnail =
-    product.thumbnail ||
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=900&auto=format&fit=crop";
-  const hasDiscount = Number(product.discountPercentage) > 0;
-  const price = Number(product.price || 0);
-  const discount = Number(product.discountPercentage || 0);
-  const discountedPrice = hasDiscount ? price - (price * discount) / 100 : price;
-  const categoryName = product.category?.name || "";
-
-  return (
-    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
-      {/* Image */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 dark:bg-zinc-900">
-        <img
-          src={thumbnail}
-          alt={product.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-        />
-
-        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-black/5 to-transparent opacity-70" />
-
-        {hasDiscount && (
-          <div className="absolute left-4 top-4 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-sm">
-            -{discount}%
-          </div>
-        )}
-
-        {categoryName && (
-          <div className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-800 shadow-sm backdrop-blur-sm dark:bg-black/70 dark:text-gray-200">
-            {categoryName}
-          </div>
-        )}
-
-        <div className="absolute inset-x-0 bottom-4 flex translate-y-4 justify-center px-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <Link
-            to={`/products/${product.slug}`}
-            className="inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100"
-          >
-            View Details
-          </Link>
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-1 text-lg font-bold text-gray-900 dark:text-white">
-          <Link
-            to={`/products/${product.slug}`}
-            className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            {product.title}
-          </Link>
-        </h3>
-
-        {categoryName && (
-          <p className="mt-1 line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
-            {categoryName}
-          </p>
-        )}
-
-        <div className="mt-auto flex items-end gap-2 pt-5">
-          <span className="text-xl font-bold text-gray-900 dark:text-white">
-            ৳ {discountedPrice.toFixed(2)}
-          </span>
-          {hasDiscount && (
-            <span className="text-sm font-medium text-gray-400 line-through dark:text-gray-500">
-              ৳ {price.toFixed(2)}
-            </span>
-          )}
-        </div>
-      </div>
-    </article>
   );
 };
 
@@ -430,26 +546,5 @@ const Pagination = ({ current, total, onChange }) => {
     </nav>
   );
 };
-
-/* ═══════════════════════════════════════════════════ */
-/*                 SKELETON LOADER                     */
-/* ═══════════════════════════════════════════════════ */
-const ProductGridSkeleton = () => (
-  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-    {[...Array(8)].map((_, i) => (
-      <div
-        key={i}
-        className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
-      >
-        <div className="aspect-4/5 animate-pulse bg-gray-100 dark:bg-zinc-900" />
-        <div className="space-y-3 p-5">
-          <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100 dark:bg-zinc-900" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100 dark:bg-zinc-900" />
-          <div className="h-6 w-1/3 animate-pulse rounded bg-gray-100 dark:bg-zinc-900" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
 
 export default Products;
