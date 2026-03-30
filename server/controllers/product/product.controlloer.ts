@@ -154,6 +154,7 @@ export const createProduct: RequestHandler = async (req, res) => {
   await newProduct.save();
 
   await delCacheByPrefix("products:list:v1:");
+  await delCache("featured:products:v1");
 
   successResponse(res, "Product Created Successfully", 201, newProduct);
 };
@@ -451,6 +452,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
 
   const cacheKey = `product:slug:${slug}`;
   await delCache(cacheKey);
+  await delCache("featured:products:v1");
   await delCacheByPrefix("products:list:v1:");
 
   return successResponse(
@@ -489,7 +491,7 @@ export const getFeaturedProducts: RequestHandler = async (req, res) => {
   if (cachedProducts) {
     return successResponse(res, "Featured Products", 200, cachedProducts);
   }
-  const products = await productModel.find({ isFeatured: true });
+  const products = await productModel.find({ isFeatured: true }).lean();
   await setCache(cacheKey, products, 60 * 60 * 24);
   return successResponse(res, "Featured Products", 200, products);
 };

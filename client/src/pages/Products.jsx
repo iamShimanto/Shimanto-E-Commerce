@@ -4,22 +4,10 @@ import { Search, X, ChevronLeft, ChevronRight, SlidersHorizontal, PackageOpen } 
 import { useGetAllProductsQuery } from "../api/products/productsApi";
 import { useGetCategoriesQuery } from "../api/category/categoryApi";
 import SEO from "../components/seo/SEO";
+import { useDebounce } from "../hooks/useDebounce";
 
 const PRODUCTS_PER_PAGE = 12;
 
-/* ─── debounce helper ─── */
-function useDebounce(value, delay = 400) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
-}
-
-/* ═══════════════════════════════════════════════════ */
-/*                  PRODUCTS  PAGE                     */
-/* ═══════════════════════════════════════════════════ */
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -109,9 +97,6 @@ const Products = () => {
 
   const hasFilters = debouncedSearch || activeCategory;
 
-  /* ═══════════════════════════════════════════════════ */
-  /*                      RENDER                        */
-  /* ═══════════════════════════════════════════════════ */
   return (
     <>
       <SEO
@@ -166,11 +151,10 @@ const Products = () => {
                 <button
                   type="button"
                   onClick={() => setActiveCategory("")}
-                  className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                    !activeCategory
+                  className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${!activeCategory
                       ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
                       : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                  }`}
+                    }`}
                 >
                   All
                 </button>
@@ -182,11 +166,10 @@ const Products = () => {
                       key={cat._id || cat.id}
                       type="button"
                       onClick={() => handleCategoryClick(slug)}
-                      className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${
-                        isActive
+                      className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-300 ${isActive
                           ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-black"
                           : "border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                      }`}
+                        }`}
                     >
                       {cat.name}
                     </button>
@@ -269,9 +252,8 @@ const Products = () => {
           {/* ── Product Grid ── */}
           {!isLoading && !isError && products.length > 0 && (
             <div
-              className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity duration-300 ${
-                isFetching ? "pointer-events-none opacity-50" : "opacity-100"
-              }`}
+              className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 transition-opacity duration-300 ${isFetching ? "pointer-events-none opacity-50" : "opacity-100"
+                }`}
             >
               {products.map((product) => (
                 <ProductCard key={product._id || product.slug} product={product} />

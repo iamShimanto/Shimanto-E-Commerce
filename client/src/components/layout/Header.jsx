@@ -372,6 +372,13 @@ export default function Header() {
             >
               Home
             </Link>
+            <Link
+              to="/products"
+              className="block rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300"
+              onClick={closeMobileDrawer}
+            >
+              Products
+            </Link>
 
             <div className="rounded-2xl border border-zinc-200 p-2 dark:border-zinc-800">
               <button
