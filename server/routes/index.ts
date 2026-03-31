@@ -9,6 +9,7 @@ import { authMiddleWare } from "../middleware/auth.middleware";
 import settingsRoute from "./settings/settings.route";
 import subscriptionRoute from "./subscription/subscription.routes";
 import sizeRoute from "./product/size.route";
+import orderRoute from "./order/order.route";
 
 router.use(
   rateLimit({ limit: 1000, windowSec: 15 * 60, keyPrefix: "rl:global" }),
@@ -25,6 +26,7 @@ router.use("/api/v1/size", sizeRoute);
 router.use("/api/v1/cart", authMiddleWare, cartRoute);
 router.use("/api/v1/settings", authMiddleWare, settingsRoute);
 router.use("/api/v1/subscription", subscriptionRoute);
+router.use("/api/v1/order", authMiddleWare, orderRoute);
 
 router.use((req, res) => {
   res.status(404).send({ message: "Api enpoint not found" });
