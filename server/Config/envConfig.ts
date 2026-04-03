@@ -18,4 +18,12 @@ export const env = cleanEnv(process.env, {
   CLOUDINARY_API_SECRET: str(),
   REDIS_HOST: str(),
   REDIS_PORT: port({ default: 6379 }),
+  STRIPE_SECRET_KEY: str({ default: "" }),
+  STRIPE_WEBHOOK_SECRET: str({ default: "" }),
+  SERVER_URL: str({ default: "" }),
+  INSIDE_DHAKA_CHARGE: port({ default: 80 }),
+  OUTSIDE_DHAKA_CHARGE: port({ default: 120 }),
+  SSL_STORE_ID: str({ default: "" }),
+  SSL_STORE_PASSWORD: str({ default: "" }),
+  SSL_ISLIVE: str({ default: "false", choices: ["true", "false"] }),
 });
