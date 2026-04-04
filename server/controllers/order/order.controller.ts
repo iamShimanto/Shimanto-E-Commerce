@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import type { PipelineStage } from "mongoose";
 import { ApiError } from "../../utils/ApiError";
 import { cartModel } from "../../models/cart.model";
 import Order from "../../models/order/order.model";
@@ -67,6 +68,9 @@ const pickString = (...values: unknown[]) => {
   return "";
 };
 
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const buildSslGatewayResponse = (
   initResponse: SslCommerzInitResponse,
   transactionId: string,
@@ -91,7 +95,7 @@ export const checkout: RequestHandler = async (req, res) => {
   if (!shippingAddress || typeof shippingAddress !== "object") {
     throw new ApiError(400, "Shipping address is required");
   }
-//   address
+  //   address
   const fullName = String(shippingAddress.fullName ?? "").trim();
   const phone = String(shippingAddress.phone ?? "").trim();
   const address = String(
@@ -105,7 +109,7 @@ export const checkout: RequestHandler = async (req, res) => {
       "Full name, phone number, and address are required",
     );
   }
-    // cart
+  // cart
   const cart = await cartModel
     .findOne({ user: userId })
     .populate("items.product", "title price thumbnail");
@@ -113,7 +117,7 @@ export const checkout: RequestHandler = async (req, res) => {
   if (!cart || !cart.items.length) {
     throw new ApiError(404, "Cart not found or empty");
   }
-//   cart items
+  //   cart items
   const items = cart.items.map((item) => {
     const product = item.product as unknown as {
       _id?: string;
@@ -136,7 +140,7 @@ export const checkout: RequestHandler = async (req, res) => {
       thumbnail: product.thumbnail ?? "",
     };
   });
-//   calculate totals and prepare order data
+  //   calculate totals and prepare order data
   const subTotal = items.reduce((total, item) => total + item.subTotal, 0);
   const insideCharge = Number(process.env.INSIDE_DHAKA_CHARGE ?? 0);
   const outsideCharge = Number(process.env.OUTSIDE_DHAKA_CHARGE ?? 0);
@@ -144,7 +148,7 @@ export const checkout: RequestHandler = async (req, res) => {
   const totalAmount = subTotal + shippingFee;
   const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const normalizedPaymentMethod = String(paymentMethod ?? "cod").toLowerCase();
-//   handle code, stripe, and sslcommerz payment methods
+  //   handle code, stripe, and sslcommerz payment methods
   if (normalizedPaymentMethod === "cod") {
     const order = await Order.create({
       user: userId,
@@ -169,7 +173,7 @@ export const checkout: RequestHandler = async (req, res) => {
 
     return successResponse(res, "Order placed successfully", 201, order);
   }
-//   stripe payment method
+  //   stripe payment method
   if (normalizedPaymentMethod === "stripe") {
     if (!stripe) {
       throw new ApiError(500, "Stripe is not configured");
@@ -236,7 +240,7 @@ export const checkout: RequestHandler = async (req, res) => {
       throw error;
     }
   }
-//   sslcommerz payment method
+  //   sslcommerz payment method
   if (normalizedPaymentMethod === "sslcommerz") {
     if (!env.SSL_STORE_ID || !env.SSL_STORE_PASSWORD) {
       throw new ApiError(500, "SSLCommerz is not configured");
@@ -340,7 +344,7 @@ export const checkout: RequestHandler = async (req, res) => {
 
   throw new ApiError(400, "Invalid payment method");
 };
-    //  stripe webhook handler
+//  stripe webhook handler
 export const stripeWebhook: RequestHandler = async (req, res) => {
   if (!stripe) {
     throw new ApiError(500, "Stripe is not configured");
@@ -670,4 +674,210 @@ export const sslcommerzCancel: RequestHandler = async (req, res) => {
 
   const redirectUrl = `${env.CLIENT_URL1}/checkout/cancel?transactionId=${encodeURIComponent(result.transactionId)}`;
   return res.redirect(302, redirectUrl);
+};
+
+export const getAllOrders: RequestHandler = async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+
+  return successResponse(res, "Orders retrieved successfully", 200, orders);
+};
+
+export const getOrderById: RequestHandler = async (req, res) => {
+  const userId = req.user?._id;
+  const orderId = req.params.id;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  if (!orderId) {
+    throw new ApiError(400, "Order ID is required");
+  }
+
+  const order = await Order.findOne({ _id: orderId, user: userId });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  return successResponse(res, "Order retrieved successfully", 200, order);
+};
+
+export const getAllOrdersForAdmin: RequestHandler = async (req, res) => {
+  const search = pickString(req.query.search);
+  const page = Math.max(Number(req.query.page ?? 1) || 1, 1);
+  const limit = Math.max(Number(req.query.limit ?? 10) || 10, 1);
+  const skip = (page - 1) * limit;
+
+  const pipeline: PipelineStage[] = [
+    {
+      $lookup: {
+        from: "users",
+        let: {
+          userId: "$user",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$userId"],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              fullName: 1,
+              email: 1,
+              role: 1,
+              avatar: 1,
+            },
+          },
+        ],
+        as: "userData",
+      },
+    },
+    {
+      $unwind: {
+        path: "$userData",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+  ];
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+
+    pipeline.push({
+      $match: {
+        $or: [
+          { transactionId: searchRegex },
+          { "shippingAddress.fullName": searchRegex },
+          { "shippingAddress.email": searchRegex },
+          { "userData.fullName": searchRegex },
+          { "userData.email": searchRegex },
+        ],
+      },
+    });
+  }
+
+  const [countResult] = await Order.aggregate([
+    ...pipeline,
+    {
+      $count: "total",
+    },
+  ]);
+
+  const orders = await Order.aggregate([
+    ...pipeline,
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit,
+    },
+    {
+      $addFields: {
+        userId: "$user",
+        user: "$userData" as never,
+      },
+    },
+    {
+      $project: {
+        userData: 0,
+      },
+    },
+  ]);
+
+  return successResponse(res, "All orders retrieved successfully", 200, {
+    orders,
+    pagination: {
+      page,
+      limit,
+      total: countResult?.total ?? 0,
+      totalPages: Math.ceil((countResult?.total ?? 0) / limit),
+    },
+  });
+};
+
+export const updateOrderStatus: RequestHandler = async (req, res) => {
+  const orderId = req.params.id;
+  const nextStatus = pickString(req.body?.orderStatus, req.body?.status);
+
+  if (!orderId) {
+    throw new ApiError(400, "Order ID is required");
+  }
+
+  if (!nextStatus) {
+    throw new ApiError(400, "Order status is required");
+  }
+
+  const normalized = nextStatus.toLowerCase().trim();
+  const allowed = [
+    "pending",
+    "confirmed",
+    "processing",
+    "shipped",
+    "delivered",
+    "cancelled",
+  ];
+
+  if (!allowed.includes(normalized)) {
+    throw new ApiError(400, "Invalid order status");
+  }
+
+  const order = await Order.findByIdAndUpdate(
+    orderId,
+    { orderStatus: normalized },
+    { new: true },
+  );
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  return successResponse(res, "Order status updated successfully", 200, order);
+};
+
+export const cancelOrder: RequestHandler = async (req, res) => {
+  const userId = req.user?._id;
+  const orderId = req.params.id;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+  if (!orderId) {
+    throw new ApiError(400, "Order ID is required");
+  }
+
+  const order = await Order.findOne({ _id: orderId, user: userId });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  if (order.paymentStatus === "paid") {
+    throw new ApiError(400, "Paid orders cannot be cancelled");
+  }
+
+  if (order.orderStatus === "cancelled") {
+    return successResponse(res, "Order is already cancelled", 200, order);
+  }
+
+  order.orderStatus = "cancelled";
+
+  await order.save();
+
+  return successResponse(res, "Order cancelled successfully", 200, order);
 };

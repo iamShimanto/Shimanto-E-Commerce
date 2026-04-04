@@ -16,7 +16,7 @@ import {
 
 app.post("/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
-// SSLCommerz posts form-urlencoded data to success/fail/cancel URLs.
+// SSLCommerz
 app.post(
   "/sslcommerz/success",
   express.urlencoded({ extended: true }),

@@ -1,20 +1,48 @@
 import { Link } from "react-router";
 import { useToast } from "../../hooks/useToast";
 import Button from "../ui/Button";
+import { useAddToCartMutation } from "../../api/cart/cartApi";
 
 export const ProductCard = ({ product }) => {
     const { push } = useToast();
+    const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
     const thumbnail =
         product.thumbnail ||
         "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=900&auto=format&fit=crop";
 
-    const handleAddToCart = () => {
-        // TODO: integrate with cart API/store
-        push({
-            title: "Added to cart",
-            description: `${product.title} has been added to your cart.`,
-            variant: "success",
-        });
+    const handleAddToCart = async () => {
+        const productId = product?._id;
+        const sku = Array.isArray(product?.variants) ? product.variants?.[0]?.sku : "";
+
+        if (!productId || !sku) {
+            push({
+                title: "Select options",
+                message: "Open product details to choose a variant.",
+                variant: "warning",
+            });
+            return;
+        }
+
+        try {
+            await addToCart({ productId, sku, quantity: 1 }).unwrap();
+            push({
+                title: "Added to cart",
+                description: `${product.title} has been added to your cart.`,
+                variant: "success",
+            });
+        } catch (error) {
+            const status = error?.status || error?.originalStatus;
+            const message = error?.data?.message || "Failed to add to cart";
+
+            push({
+                title: status === 401 ? "Login required" : "Error",
+                message:
+                    status === 401
+                        ? "Please login to add items to cart."
+                        : message,
+                variant: status === 401 ? "warning" : "error",
+            });
+        }
     };
 
     const hasDiscount = Number(product.discountPercentage) > 0;
@@ -87,6 +115,8 @@ export const ProductCard = ({ product }) => {
                         variant="success"
                         size="sm"
                         className="w-fit ml-auto transition-all duration-300 cursor-pointer"
+                        loading={isAdding}
+                        disabled={isAdding}
                     >
                         Add to Cart
                     </Button>

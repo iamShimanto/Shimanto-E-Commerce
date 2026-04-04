@@ -201,7 +201,6 @@ const orderSchema = new Schema<IOrder>(
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ paymentMethod: 1, paymentStatus: 1 });
-orderSchema.index({ transactionId: 1 }, { sparse: true });
 
 const Order = model<IOrder>("Order", orderSchema);
 
