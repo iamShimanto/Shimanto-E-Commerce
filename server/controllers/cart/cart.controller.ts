@@ -74,7 +74,10 @@ export const getCart: RequestHandler = async (req, res) => {
   if (cachedCart) {
     return successResponse(res, "Cart retrieved successfully", 200, cachedCart);
   }
-  const cartData = await cartModel.findOne({ user: req.user._id });
+  const cartData = await cartModel
+    .findOne({ user: req.user._id })
+    .populate("items.product", "title slug price discountPercentage thumbnail")
+    .lean();
 
   if (!cartData) throw new ApiError(404, "Cart not found");
 

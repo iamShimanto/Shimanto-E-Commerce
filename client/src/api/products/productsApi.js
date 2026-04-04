@@ -14,7 +14,7 @@ export const productsApi = createApi({
       providesTags: ["Product"],
       transformResponse: (response) => response?.data ?? [],
     }),
-
+    // get all products with pagination, search, filter by category and sort by price
     getAllProducts: builder.query({
       query: ({ page = 1, limit = 12, search, category, sortPrice } = {}) => {
         const params = new URLSearchParams();
@@ -34,8 +34,17 @@ export const productsApi = createApi({
       },
       providesTags: ["Product"],
     }),
+    // get product by slug
+    getProductBySlug: builder.query({
+      query: (slug) => ({
+        url: `/api/v1/product/get-single-product/${slug}`,
+        method: "GET",
+      }),
+      providesTags: ["Product"],
+      transformResponse: (response) => response?.data ?? null,
+    })
   }),
 });
 
-export const { useGetFeaturedProductsQuery, useGetAllProductsQuery } =
+export const { useGetFeaturedProductsQuery, useGetAllProductsQuery, useGetProductBySlugQuery } =
   productsApi;

@@ -16,6 +16,7 @@ import ThemeToggle from "../ui/ThemeToggle";
 import { useTheme } from "../../hooks/useTheme";
 import { useGetCategoriesQuery } from "../../api/category/categoryApi";
 import { authApi, useLogoutMutation, useProfileQuery } from "../../api/auth/authApi";
+import { useGetCartQuery } from "../../api/cart/cartApi";
 import { useNavigate } from "react-router";
 import { useToast } from "../../hooks/useToast";
 import { useDispatch } from "react-redux"
@@ -56,6 +57,11 @@ export default function Header() {
   const [headerSearch, setHeaderSearch] = useState("");
   const user = profileData?.data || profileData?.user || null;
   const isLoggedIn = !!user && !profileLoading;
+
+  const { data: cartData } = useGetCartQuery(undefined, {
+    skip: !isLoggedIn,
+  });
+  const cartCount = Number(cartData?.totalItems || 0);
 
   const handleHeaderSearch = (event) => {
     event.preventDefault();
@@ -255,9 +261,11 @@ export default function Header() {
               aria-label="Cart"
             >
               <ShoppingCart size={18} />
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
-                2
-              </span>
+              {cartCount > 0 ? (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-900 px-1 text-[10px] font-semibold text-white dark:bg-white dark:text-zinc-900">
+                  {cartCount}
+                </span>
+              ) : null}
             </Link>
 
             {isLoggedIn ? (
@@ -318,9 +326,11 @@ export default function Header() {
               aria-label="Cart"
             >
               <ShoppingCart size={18} />
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
-                2
-              </span>
+              {cartCount > 0 ? (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-900 px-1 text-[10px] font-semibold text-white dark:bg-white dark:text-zinc-900">
+                  {cartCount}
+                </span>
+              ) : null}
             </Link>
 
             <Button

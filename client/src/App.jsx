@@ -14,6 +14,10 @@ const Products = React.lazy(() => import("./pages/Products"));
 const ProductDetails = React.lazy(() => import("./pages/ProductDetails"));
 const Cart = React.lazy(() => import("./pages/Cart"));
 const Checkout = React.lazy(() => import("./pages/Checkout"));
+const CheckoutSuccess = React.lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutFail = React.lazy(() => import("./pages/CheckoutFail"));
+const CheckoutCancel = React.lazy(() => import("./pages/CheckoutCancel"));
+const CheckoutPlaced = React.lazy(() => import("./pages/CheckoutPlaced"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
@@ -46,6 +50,38 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="checkout/success"
+            element={
+              <ProtectedRoute>
+                <CheckoutSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="checkout/fail"
+            element={
+              <ProtectedRoute>
+                <CheckoutFail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="checkout/cancel"
+            element={
+              <ProtectedRoute>
+                <CheckoutCancel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="checkout/placed"
+            element={
+              <ProtectedRoute>
+                <CheckoutPlaced />
               </ProtectedRoute>
             }
           />

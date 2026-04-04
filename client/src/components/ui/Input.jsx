@@ -44,7 +44,7 @@ const Input = forwardRef(
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
+                        className="mb-2 block text-sm font-medium"
                     >
                         {label}
                         {required && <span className="ml-1 text-red-500">*</span>}
@@ -72,9 +72,7 @@ const Input = forwardRef(
                                     : undefined
                         }
                         className={clsx(
-                            "w-full border bg-white text-slate-900 outline-none transition-all duration-200",
-                            "placeholder:text-slate-400 dark:placeholder:text-slate-500",
-                            "dark:bg-slate-950 dark:text-slate-100",
+                            "w-full border outline-none transition-all duration-200",
                             "disabled:cursor-not-allowed disabled:opacity-60",
                             "focus:ring-4",
                             inputSizes[size],
