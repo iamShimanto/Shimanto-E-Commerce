@@ -4,7 +4,7 @@ import { productModel } from "../../models/product.model";
 import { cartModel } from "../../models/cart.model";
 import { successResponse } from "../../utils/successResponse";
 import { Types } from "mongoose";
-import { delCache, getCache, setCache } from "../../utils/redisCache";
+// import { delCache, getCache, setCache } from "../../utils/redisCache";
 import { UserModel } from "../../models/user.model";
 
 export const addToCart: RequestHandler = async (req, res) => {
@@ -36,8 +36,6 @@ export const addToCart: RequestHandler = async (req, res) => {
 
   const isExistCart = await cartModel.findOne({ user: req.user._id });
 
-  const cacheKey = `cart:${req.user._id}`;
-
   if (isExistCart) {
     const isExistSku = isExistCart.items.some((item) => item.sku == sku);
     if (isExistSku) throw new ApiError(400, "Product already exist in Cart");
@@ -48,8 +46,7 @@ export const addToCart: RequestHandler = async (req, res) => {
       quantity: parsedQuantity,
       subTotal,
     });
-    await isExistCart.save();
-    await delCache(cacheKey);
+    await isExistCart.save()
     return successResponse(res, "Product added to cart");
   }
 
@@ -63,25 +60,16 @@ export const addToCart: RequestHandler = async (req, res) => {
         subTotal,
       },
     ],
-  });
-  await delCache(cacheKey);
+  })
   return successResponse(res, "Product added to cart", 201);
 };
 
 export const getCart: RequestHandler = async (req, res) => {
-  const cacheKey = `cart:${req.user._id}`;
-  const cachedCart = await getCache(cacheKey);
-  if (cachedCart) {
-    return successResponse(res, "Cart retrieved successfully", 200, cachedCart);
-  }
   const cartData = await cartModel
     .findOne({ user: req.user._id })
     .populate("items.product", "title slug price discountPercentage thumbnail")
     .lean();
-
   if (!cartData) throw new ApiError(404, "Cart not found");
-
-  await setCache(cacheKey, cartData, 60 * 5);
   return successResponse(res, "Cart retrieved successfully", 200, cartData);
 };
 
@@ -134,9 +122,6 @@ export const updateCart: RequestHandler = async (req, res) => {
     item.subTotal = subTotal;
   }
   await cart.save();
-
-  const cacheKey = `cart:${req.user._id}`;
-  await delCache(cacheKey);
   return successResponse(res, "Cart updated successfully", 200, cart);
 };
 
@@ -163,9 +148,6 @@ export const removeFromCart: RequestHandler = async (req, res) => {
   }
   cart.items = cart.items.filter((i) => i.sku !== sku);
   await cart.save();
-
-  const cacheKey = `cart:${req.user._id}`;
-  await delCache(cacheKey);
   return successResponse(res, "Product removed from cart", 200, cart);
 };
 
@@ -174,8 +156,6 @@ export const clearCart: RequestHandler = async (req, res) => {
   if (!cart) {
     throw new ApiError(404, "Cart not found");
   }
-  const cacheKey = `cart:${req.user._id}`;
-  await delCache(cacheKey);
   return successResponse(res, "Cart cleared successfully", 200);
 };
 

@@ -1,22 +1,21 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @utility container {
   padding-inline: 2rem;
   margin-inline: auto;
 }
 
 @layer base {
-  .dark {
-    --bg: #000000;
-  }
-
   html {
     height: 100%;
+    color-scheme: light;
   }
-}
 
-.dark select , .dark input{
-  background-color: #000000;
+  html.dark {
+    color-scheme: dark;
+  }
 }
 
 /* ── Splide Featured Slider Overrides ────────────────────────── */

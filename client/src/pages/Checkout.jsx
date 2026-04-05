@@ -115,12 +115,24 @@ const Checkout = () => {
       const data = res?.data;
 
       dispatch(cartApi.util.invalidateTags(["Cart"]));
+      dispatch(
+        cartApi.util.upsertQueryData("getCart", undefined, {
+          items: [],
+          totalItems: 0,
+        }),
+      );
 
       const method = String(paymentMethod || "cod").toLowerCase();
       if (method === "cod") {
         const orderId = data?._id;
+        const transactionId = data?.transactionId;
         if (orderId) {
-          navigate(`/checkout/placed?orderId=${encodeURIComponent(orderId)}`);
+          const params = new URLSearchParams();
+          params.set("orderId", orderId);
+          if (transactionId) {
+            params.set("transactionId", transactionId);
+          }
+          navigate(`/checkout/placed?${params.toString()}`);
         } else {
           navigate("/checkout/placed");
         }

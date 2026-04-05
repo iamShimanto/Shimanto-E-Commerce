@@ -153,6 +153,7 @@ export const createProduct: RequestHandler = async (req, res) => {
   });
   await newProduct.save();
 
+  await delCacheByPrefix("products:list:v2:");
   await delCacheByPrefix("products:list:v1:");
   await delCache("featured:products:v1");
 
@@ -465,6 +466,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
   const cacheKey = `product:slug:${slug}`;
   await delCache(cacheKey);
   await delCache("featured:products:v1");
+  await delCacheByPrefix("products:list:v2:");
   await delCacheByPrefix("products:list:v1:");
 
   return successResponse(
@@ -488,6 +490,7 @@ export const toggleFeatured: RequestHandler = async (req, res) => {
 
   const cacheKey = `featured:products:v1`;
   await delCache(cacheKey);
+  await delCacheByPrefix("products:list:v2:");
   await delCacheByPrefix("products:list:v1:");
   return successResponse(
     res,

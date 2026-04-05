@@ -13,13 +13,13 @@ import {
 import { Link } from "react-router";
 import Button from "../ui/Button";
 import ThemeToggle from "../ui/ThemeToggle";
-import { useTheme } from "../../hooks/useTheme";
 import { useGetCategoriesQuery } from "../../api/category/categoryApi";
 import { authApi, useLogoutMutation, useProfileQuery } from "../../api/auth/authApi";
 import { useGetCartQuery } from "../../api/cart/cartApi";
 import { useNavigate } from "react-router";
 import { useToast } from "../../hooks/useToast";
 import { useDispatch } from "react-redux"
+import { useTheme } from "../../hooks/useTheme";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -316,6 +316,7 @@ export default function Header() {
             )}
 
             <ThemeToggle isDark={isDark} onToggle={toggle} />
+
           </div>
 
           {/* Mobile Right */}
@@ -501,6 +502,7 @@ export default function Header() {
             )}
 
             <ThemeToggle isDark={isDark} onToggle={toggle} />
+
           </div>
 
           {isLoggedIn && (

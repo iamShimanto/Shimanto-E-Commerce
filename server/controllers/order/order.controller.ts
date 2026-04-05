@@ -3,8 +3,9 @@ import type { PipelineStage } from "mongoose";
 import { ApiError } from "../../utils/ApiError";
 import { cartModel } from "../../models/cart.model";
 import Order from "../../models/order/order.model";
+import { productModel } from "../../models/product.model";
 import { successResponse } from "../../utils/successResponse";
-import { delCache } from "../../utils/redisCache";
+import { delCache, delCacheByPrefix } from "../../utils/redisCache";
 import Stripe = require("stripe");
 const SSLCommerzPayment = require("sslcommerz-lts");
 import { env } from "../../Config/envConfig";
@@ -83,6 +84,63 @@ const buildSslGatewayResponse = (
 });
 
 const isSslCommerzLive = env.SSL_ISLIVE === "true";
+
+const adjustOrderInventory = async (order: {
+  _id: unknown;
+  items: Array<{ product: unknown; sku: string; quantity: number }>;
+}) => {
+  const claimedOrder = await Order.findOneAndUpdate(
+    { _id: order._id, inventoryAdjusted: { $ne: true } },
+    { inventoryAdjusted: true },
+    { new: true },
+  );
+
+  if (!claimedOrder) {
+    return false;
+  }
+
+  try {
+    for (const item of order.items) {
+      const quantity = Number(item.quantity);
+
+      if (!item.product || !item.sku || !Number.isFinite(quantity) || quantity < 1) {
+        throw new ApiError(400, "Order item is invalid for stock adjustment");
+      }
+
+      const updatedProduct = await productModel.findOneAndUpdate(
+        {
+          _id: item.product,
+          variants: {
+            $elemMatch: {
+              sku: item.sku,
+              stock: { $gte: quantity },
+            },
+          },
+        },
+        {
+          $inc: {
+            "variants.$.stock": -quantity,
+          },
+        },
+        { new: true },
+      );
+
+      if (!updatedProduct) {
+        throw new ApiError(400, `Insufficient stock for SKU ${item.sku}`);
+      }
+    }
+
+    await delCache("featured:products:v1");
+    await delCacheByPrefix("products:list:v2:");
+    await delCacheByPrefix("products:list:v1:");
+    await delCacheByPrefix("product:slug:");
+
+    return true;
+  } catch (error) {
+    await Order.findByIdAndUpdate(order._id, { inventoryAdjusted: false });
+    throw error;
+  }
+};
 
 export const checkout: RequestHandler = async (req, res) => {
   const userId = req.user?._id;
@@ -169,6 +227,8 @@ export const checkout: RequestHandler = async (req, res) => {
       transactionId,
     });
 
+    await adjustOrderInventory(order);
+
     await cartModel.findOneAndDelete({ user: userId });
 
     return successResponse(res, "Order placed successfully", 201, order);
@@ -215,7 +275,7 @@ export const checkout: RequestHandler = async (req, res) => {
             },
           },
         ],
-        success_url: `${env.CLIENT_URL1}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${env.CLIENT_URL1}/checkout/success?session_id={CHECKOUT_SESSION_ID}&transactionId=${encodeURIComponent(transactionId)}`,
         cancel_url: `${env.CLIENT_URL1}/checkout/cancel`,
         customer_email: email || undefined,
         client_reference_id: order._id.toString(),
@@ -377,12 +437,16 @@ export const stripeWebhook: RequestHandler = async (req, res) => {
           session.metadata?.orderId || session.client_reference_id;
 
         if (orderId) {
-          await Order.findByIdAndUpdate(orderId, {
+          const order = await Order.findByIdAndUpdate(orderId, {
             paymentStatus: "paid",
             orderStatus: "confirmed",
             transactionId: session.metadata?.transactionId ?? undefined,
             gatewayResponse: buildStripeGatewayResponse(event.type, session),
           });
+
+          if (order) {
+            await adjustOrderInventory(order);
+          }
         }
         break;
       }
@@ -482,6 +546,7 @@ export const sslcommerzIpn: RequestHandler = async (req, res) => {
   );
 
   if (isSuccess) {
+    await adjustOrderInventory(order);
     await cartModel.findOneAndDelete({ user: order.user });
     await delCache(`cart:${order.user}`);
   }
@@ -579,6 +644,7 @@ const resolveSslOrderAndUpdate = async (params: {
   });
 
   if (shouldMarkPaid) {
+    await adjustOrderInventory(order);
     await cartModel.findOneAndDelete({ user: order.user });
     await delCache(`cart:${order.user}`);
   }
