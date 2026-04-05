@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import Button from "../components/ui/Button";
 import { Spinner } from "../components/ui/SkeletonLoader";
 import { useGetOrderByIdQuery } from "../api/order/orderApi";
+import { useDispatch } from "react-redux";
+import { cartApi } from "../api/cart/cartApi";
 
 const money = (amount) => {
     const value = Number(amount || 0);
@@ -12,6 +15,18 @@ const money = (amount) => {
 const CheckoutPlaced = () => {
     const [searchParams] = useSearchParams();
     const orderId = searchParams.get("orderId");
+    const transactionId = searchParams.get("transactionId");
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(cartApi.util.invalidateTags(["Cart"]));
+        dispatch(
+            cartApi.util.upsertQueryData("getCart", undefined, {
+                items: [],
+                totalItems: 0,
+            }),
+        );
+    }, [dispatch]);
 
     const { data: order, isLoading } = useGetOrderByIdQuery(orderId, {
         skip: !orderId,
@@ -34,6 +49,11 @@ const CheckoutPlaced = () => {
                         <p className="text-zinc-700 dark:text-zinc-200">
                             <span className="font-medium">Order ID:</span> {orderId}
                         </p>
+                        {(transactionId || order?.transactionId) ? (
+                            <p className="mt-1 text-zinc-700 dark:text-zinc-200">
+                                <span className="font-medium">Transaction:</span> {transactionId || order?.transactionId}
+                            </p>
+                        ) : null}
                         {order?.totalAmount != null ? (
                             <p className="mt-1 text-zinc-700 dark:text-zinc-200">
                                 <span className="font-medium">Total:</span> {money(order.totalAmount)}

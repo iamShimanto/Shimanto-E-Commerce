@@ -41,6 +41,7 @@ interface IOrder {
   totalAmount: number;
   currency: string;
   transactionId?: string;
+  inventoryAdjusted?: boolean;
   gatewayResponse?: Record<string, unknown>;
   createdAt?: Date;
   updatedAt?: Date;
@@ -188,6 +189,10 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       trim: true,
       sparse: true,
+    },
+    inventoryAdjusted: {
+      type: Boolean,
+      default: false,
     },
     gatewayResponse: {
       type: Schema.Types.Mixed,

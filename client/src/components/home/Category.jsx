@@ -54,7 +54,7 @@ const Category = () => {
         <section className="w-full py-14 md:py-20">
             <div className="container px-4 sm:px-6 lg:px-8">
                 <div className="mb-8 text-start md:mb-12">
-                    <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                    <h2 className="text-3xl font-bold tracking-tight md:text-4xl text-black dark:text-white">
                         Explore Our Categories
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm md:text-base">
