@@ -1,19 +1,14 @@
-import {
-    Area,
-    AreaChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from "recharts"
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { RefreshCcw } from "lucide-react"
-
 import { useGetDashboardStatsQuery } from "../api/stats/statsApi"
 import Button from "../components/ui/Button"
 import { Link } from "react-router"
-import { cn } from "../lib/cn"
 import { formatMoneyBDT } from "../features/products/productUtils"
+import { StatusPill } from "../components/dashboard/StatusPill"
+import { StatCard } from "../components/dashboard/StatCard"
+import { Panel } from "../components/dashboard/Panel"
+import { ListRow } from "../components/dashboard/ListRow"
+import { formatDateTime } from "../lib/formatDateTime"
 
 function formatCount(value) {
     const numberValue = Number(value)
@@ -21,130 +16,15 @@ function formatCount(value) {
     return numberValue.toLocaleString("en-US")
 }
 
-function formatDateTime(value) {
-    const date = value ? new Date(value) : null
-    if (!date || Number.isNaN(date.getTime())) return "—"
-    return date.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-    })
-}
-
 function toList(value) {
     return Array.isArray(value) ? value : []
 }
 
-function statusTone(value) {
-    const normalized = String(value || "").toLowerCase()
-    if (normalized === "paid" || normalized === "delivered" || normalized === "active") return "ok"
-    if (normalized === "pending" || normalized === "processing" || normalized === "confirmed") return "warn"
-    if (normalized === "failed" || normalized === "cancelled" || normalized === "refunded") return "bad"
-    return "neutral"
-}
-
-function StatusPill({ value }) {
-    const tone = statusTone(value)
-    const styles = {
-        neutral: "bg-(--surface-2) text-(--text-muted) ring-(--border)",
-        ok: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
-        warn: "bg-amber-50 text-amber-700 ring-amber-200/70",
-        bad: "bg-rose-50 text-rose-700 ring-rose-200/70",
-    }
-
-    return (
-        <span
-            className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ring-inset",
-                styles[tone] || styles.neutral,
-            )}
-        >
-            {value || "—"}
-        </span>
-    )
-}
-
-function StatCard({ label, value, hint, accent = "neutral" }) {
-    const accents = {
-        neutral: "from-slate-500/10 via-transparent to-transparent",
-        success: "from-emerald-500/15 via-transparent to-transparent",
-        warning: "from-amber-500/15 via-transparent to-transparent",
-        danger: "from-rose-500/15 via-transparent to-transparent",
-        info: "from-sky-500/15 via-transparent to-transparent",
-    }
-
-    return (
-        <div className="relative overflow-hidden rounded-2xl border border-(--border) bg-(--surface) p-4 shadow-sm">
-            <div className={cn("pointer-events-none absolute inset-0 bg-linear-to-br", accents[accent] || accents.neutral)} />
-            <div className="relative">
-                <div className="text-xs font-semibold text-(--text-muted)">{label}</div>
-                <div className="mt-1 flex items-end justify-between gap-2">
-                    <div className="text-2xl font-extrabold tracking-tight">{value}</div>
-                </div>
-                {hint ? (
-                    <div className="mt-1 text-xs font-semibold text-(--text-muted)">{hint}</div>
-                ) : null}
-            </div>
-        </div>
-    )
-}
-
-function Panel({ title, subtitle, children, action }) {
-    return (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <div className="text-sm font-extrabold">{title}</div>
-                    {subtitle ? (
-                        <div className="mt-1 text-xs font-semibold text-(--text-muted)">{subtitle}</div>
-                    ) : null}
-                </div>
-                {action ? <div>{action}</div> : null}
-            </div>
-            <div className="mt-4">{children}</div>
-        </div>
-    )
-}
-
-function ListRow({ title, subtitle, meta, right, accent = "neutral" }) {
-    const accentStyles = {
-        neutral: "bg-(--surface-2) text-(--text-muted)",
-        success: "bg-emerald-50 text-emerald-700",
-        warning: "bg-amber-50 text-amber-700",
-        danger: "bg-rose-50 text-rose-700",
-        info: "bg-sky-50 text-sky-700",
-    }
-
-    return (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-(--border) bg-(--surface-2) px-3 py-3">
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                    <div className="truncate text-sm font-extrabold">{title}</div>
-                    {meta ? (
-                        <span
-                            className={cn(
-                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold",
-                                accentStyles[accent] || accentStyles.neutral,
-                            )}
-                        >
-                            {meta}
-                        </span>
-                    ) : null}
-                </div>
-                {subtitle ? (
-                    <div className="mt-1 truncate text-xs font-semibold text-(--text-muted)">{subtitle}</div>
-                ) : null}
-            </div>
-            {right ? <div className="shrink-0 text-right text-xs font-extrabold">{right}</div> : null}
-        </div>
-    )
-}
 
 export default function DashboardHome() {
+    // api
     const { data, isLoading, isFetching, isError, error, refetch } = useGetDashboardStatsQuery()
-
+    // summaries
     const summary = data?.summary ?? {}
     const revenueSummary = summary.revenue ?? {}
     const orderSummary = summary.orders ?? {}
@@ -153,7 +33,7 @@ export default function DashboardHome() {
     const userSummary = summary.users ?? {}
     const subscriptionSummary = summary.subscriptions ?? {}
     const cartSummary = summary.carts ?? {}
-
+    // lists
     const monthlySales = toList(data?.charts?.monthlySales)
     const topProducts = toList(data?.topProducts)
     const topCategories = toList(data?.topCategories)

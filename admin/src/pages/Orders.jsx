@@ -14,6 +14,7 @@ import { formatMoneyBDT } from "../features/products/productUtils"
 import Button from "../components/ui/Button"
 import Modal from "../components/ui/Modal"
 import Select from "../components/ui/Select"
+import { formatDateTime } from "../lib/formatDateTime"
 
 const toErrorMessage = (error, fallback = "Request failed") =>
     error?.data?.message ||
@@ -21,18 +22,6 @@ const toErrorMessage = (error, fallback = "Request failed") =>
     (typeof error?.data === "string" ? error.data : null) ||
     (typeof error?.error === "string" ? error.error : null) ||
     fallback
-
-function formatDateTime(value) {
-    const d = value ? new Date(value) : null
-    if (!d || Number.isNaN(d.getTime())) return "—"
-    return d.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-    })
-}
 
 function pickCustomer(order) {
     const userName = order?.user?.fullName?.trim()
