@@ -4,21 +4,9 @@ import { ChevronLeft, ChevronRight, Search, ShoppingCart } from "lucide-react"
 import { useTotalCartsQuery } from "../api/cart/cartApi"
 import { cn } from "../lib/cn"
 import { formatMoneyBDT } from "../features/products/productUtils"
-
 import Button from "../components/ui/Button"
 import Modal from "../components/ui/Modal"
-
-function formatDateTime(value) {
-    const d = value ? new Date(value) : null
-    if (!d || Number.isNaN(d.getTime())) return "—"
-    return d.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-    })
-}
+import { formatDateTime } from "../lib/formatDateTime"
 
 function getThumb(product) {
     const t = product?.thumbnail
