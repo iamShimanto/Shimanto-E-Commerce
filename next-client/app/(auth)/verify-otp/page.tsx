@@ -1,25 +1,25 @@
 import Link from "next/link";
 import AuthShell from "@/components/auth/Auth-Shell";
-import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
+import VerifyOtpForm from "@/components/auth/VerifyOtpForm";
 
-export default function ForgotPasswordPage() {
+export default function VerifyOtpPage() {
   return (
     <AuthShell
-      title="Forgot password"
-      description="Enter your email and we\'ll send a password reset link if the account exists."
+      title="Verify your email"
+      description="Enter the 6-digit code we sent to your inbox to activate your account."
       footer={
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Remembered your password?{" "}
+          Already verified?{" "}
           <Link
             href="/login"
             className="font-medium text-[#3f51f7] transition hover:text-[#3041d2]"
           >
-            Back to login
+            Login
           </Link>
         </p>
       }
     >
-      <ForgotPasswordForm />
+      <VerifyOtpForm />
     </AuthShell>
   );
 }

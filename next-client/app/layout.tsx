@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ReduxProvider from "@/providers/redux-provider";
+import ToastProvider from "@/providers/toast-provider";
+import ThemeProvider from "@/providers/theme-provider";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -12,11 +15,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className="h-full antialiased"
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>
+          <ReduxProvider>
+            <ToastProvider />
+            {children}
+          </ReduxProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
