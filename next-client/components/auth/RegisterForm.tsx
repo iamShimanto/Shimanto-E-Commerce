@@ -47,18 +47,40 @@ export default function RegisterForm() {
     }
 
     try {
-      await registerUser({
+      await toast.promise(
+        registerUser({
         fullName: form.fullName,
         email: form.email,
         phone: form.phone || undefined,
         address: form.address || undefined,
         password: form.password,
-      }).unwrap();
+        }).unwrap(),
+        {
+          loading: {
+            title: "Creating account",
+            description: "Please wait while we set up your account.",
+            kind: "loading",
+          },
+          success: {
+            title: "Account created",
+            description: "We sent a verification code to your email address.",
+            kind: "success",
+          },
+          error: (submissionError) => {
+            const message = getApiErrorMessage(
+              submissionError,
+              "Unable to create your account right now.",
+            );
 
-      toast.success(
-        "Account created",
-        "We sent a verification code to your email address.",
+            return {
+              title: "Registration failed",
+              description: message,
+              kind: "error",
+            };
+          },
+        },
       );
+
       router.replace(`/verify-otp?email=${encodeURIComponent(form.email)}`);
     } catch (submissionError) {
       const message = getApiErrorMessage(
@@ -66,7 +88,6 @@ export default function RegisterForm() {
         "Unable to create your account right now.",
       );
       setError(message);
-      toast.error("Registration failed", message);
     }
   };
 

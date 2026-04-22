@@ -8,15 +8,26 @@ export default function LoginPage() {
       title="Login"
       description="Sign in to access your account, saved details, and order history."
       footer={
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-[#3f51f7] transition hover:text-[#3041d2]"
-          >
-            Create one
-          </Link>
-        </p>
+        <div className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
+          <p>
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-[#3f51f7] transition hover:text-[#3041d2]"
+            >
+              Create one
+            </Link>
+          </p>
+          <p>
+            Account not verified?{" "}
+            <Link
+              href="/resend-otp"
+              className="font-medium text-[#3f51f7] transition hover:text-[#3041d2]"
+            >
+              Resend OTP
+            </Link>
+          </p>
+        </div>
       }
     >
       <LoginForm />

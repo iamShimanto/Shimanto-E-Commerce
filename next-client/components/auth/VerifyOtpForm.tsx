@@ -25,11 +25,31 @@ export default function VerifyOtpForm() {
     setError("");
 
     try {
-      await verifyOtp({ email, otp }).unwrap();
-      toast.success(
-        "Email verified",
-        "Your account is now active. You can log in next.",
-      );
+      await toast.promise(verifyOtp({ email, otp }).unwrap(), {
+        loading: {
+          title: "Verifying email",
+          description: "Please wait while we confirm your code.",
+          kind: "loading",
+        },
+        success: {
+          title: "Email verified",
+          description: "Your account is now active. You can log in next.",
+          kind: "success",
+        },
+        error: (submissionError) => {
+          const message = getApiErrorMessage(
+            submissionError,
+            "Unable to verify the code right now.",
+          );
+
+          return {
+            title: "Verification failed",
+            description: message,
+            kind: "error",
+          };
+        },
+      });
+
       router.replace("/login");
     } catch (submissionError) {
       const message = getApiErrorMessage(
@@ -37,7 +57,6 @@ export default function VerifyOtpForm() {
         "Unable to verify the code right now.",
       );
       setError(message);
-      toast.error("Verification failed", message);
     }
   };
 
@@ -45,18 +64,36 @@ export default function VerifyOtpForm() {
     setError("");
 
     try {
-      await resendOtp({ email }).unwrap();
-      toast.success(
-        "Code resent",
-        "We sent a fresh verification code to your inbox.",
-      );
+      await toast.promise(resendOtp({ email }).unwrap(), {
+        loading: {
+          title: "Resending code",
+          description: "Please wait while we send a fresh verification email.",
+          kind: "loading",
+        },
+        success: {
+          title: "Code resent",
+          description: "We sent a fresh verification code to your inbox.",
+          kind: "success",
+        },
+        error: (submissionError) => {
+          const message = getApiErrorMessage(
+            submissionError,
+            "Unable to resend the code right now.",
+          );
+
+          return {
+            title: "Resend failed",
+            description: message,
+            kind: "error",
+          };
+        },
+      });
     } catch (submissionError) {
       const message = getApiErrorMessage(
         submissionError,
         "Unable to resend the code right now.",
       );
       setError(message);
-      toast.error("Resend failed", message);
     }
   };
 

@@ -20,19 +20,38 @@ export default function ForgotPasswordForm() {
     setError("");
 
     try {
-      await requestReset({ email }).unwrap();
+      await toast.promise(requestReset({ email }).unwrap(), {
+        loading: {
+          title: "Sending reset link",
+          description: "Please wait while we prepare your password reset email.",
+          kind: "loading",
+        },
+        success: {
+          title: "Reset link sent",
+          description: "If the email exists, you will receive a password reset link shortly.",
+          kind: "success",
+        },
+        error: (submissionError) => {
+          const message = getApiErrorMessage(
+            submissionError,
+            "Unable to send reset link right now.",
+          );
+
+          return {
+            title: "Reset request failed",
+            description: message,
+            kind: "error",
+          };
+        },
+      });
+
       setSubmitted(true);
-      toast.success(
-        "Reset link sent",
-        "If the email exists, you will receive a password reset link shortly.",
-      );
     } catch (submissionError) {
       const message = getApiErrorMessage(
         submissionError,
         "Unable to send reset link right now.",
       );
       setError(message);
-      toast.error("Reset request failed", message);
     }
   };
 

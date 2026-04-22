@@ -65,7 +65,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isDisabled}
         aria-busy={loading || undefined}
         className={cn(
-          "inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-200",
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-200 cursor-pointer",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-slate-950",
           variantStyles[variant],
           sizeStyles[size],
