@@ -2,24 +2,18 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { FiLock, FiMail } from "react-icons/fi";
+import { FiMail } from "react-icons/fi";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/hooks/useToast";
 import { getApiErrorMessage } from "@/components/auth/auth-utils";
-import { useLoginUserMutation } from "@/services/auth.service";
+import { useResendOtpMutation } from "@/services/auth.service";
 
-const initialState = {
-  email: "",
-  password: "",
-  rememberMe: true,
-};
-
-export default function LoginForm() {
+export default function ResendOtpForm() {
   const router = useRouter();
   const toast = useToast();
-  const [loginUser, { isLoading }] = useLoginUserMutation();
-  const [form, setForm] = useState(initialState);
+  const [resendOtp, { isLoading }] = useResendOtpMutation();
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -27,37 +21,36 @@ export default function LoginForm() {
     setError("");
 
     try {
-      await toast.promise(loginUser({ email: form.email, password: form.password }).unwrap(), {
+      await toast.promise(resendOtp({ email }).unwrap(), {
         loading: {
-          title: "Signing in",
-          description: "Please wait while we verify your credentials.",
+          title: "Sending verification code",
+          description: "Please wait while we send a fresh OTP to your inbox.",
           kind: "loading",
         },
         success: {
-          title: "Login successful",
-          description: "You are now signed in.",
+          title: "Code sent",
+          description: "We sent a new verification code to your email.",
           kind: "success",
         },
         error: (submissionError) => {
           const message = getApiErrorMessage(
             submissionError,
-            "Unable to sign in. Please check your credentials and try again.",
+            "Unable to send the verification code right now.",
           );
 
           return {
-            title: "Login failed",
+            title: "Resend failed",
             description: message,
             kind: "error",
           };
         },
       });
 
-      router.replace("/");
-      router.refresh();
+      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (submissionError) {
       const message = getApiErrorMessage(
         submissionError,
-        "Unable to sign in. Please check your credentials and try again.",
+        "Unable to send the verification code right now.",
       );
       setError(message);
     }
@@ -71,29 +64,31 @@ export default function LoginForm() {
         </div>
       ) : null}
 
+      <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+        <p className="leading-6">
+          Enter the email address you used to register. We will send a fresh OTP
+          so you can verify your account.
+        </p>
+      </div>
+
       <Input
         label="Email"
         type="email"
         autoComplete="email"
         placeholder="you@example.com"
         startIcon={<FiMail className="h-4 w-4" />}
-        value={form.email}
-        onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
         required
       />
 
-      <Input
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        placeholder="Enter your password"
-        startIcon={<FiLock className="h-4 w-4" />}
-        value={form.password}
-        onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-        required
-      />
-      <Button type="submit" fullWidth loading={isLoading} loadingLabel="Signing in...">
-        Login
+      <Button
+        type="submit"
+        fullWidth
+        loading={isLoading}
+        loadingLabel="Sending code..."
+      >
+        Send verification code
       </Button>
     </form>
   );

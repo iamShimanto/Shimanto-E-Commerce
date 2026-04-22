@@ -39,11 +39,31 @@ export default function ResetPasswordForm() {
     }
 
     try {
-      await resetPassword({ token, newPassword: password }).unwrap();
-      toast.success(
-        "Password updated",
-        "Your password has been changed successfully. You can log in now.",
-      );
+      await toast.promise(resetPassword({ token, newPassword: password }).unwrap(), {
+        loading: {
+          title: "Updating password",
+          description: "Please wait while we save your new password.",
+          kind: "loading",
+        },
+        success: {
+          title: "Password updated",
+          description: "Your password has been changed successfully. You can log in now.",
+          kind: "success",
+        },
+        error: (submissionError) => {
+          const message = getApiErrorMessage(
+            submissionError,
+            "Unable to update your password right now.",
+          );
+
+          return {
+            title: "Reset failed",
+            description: message,
+            kind: "error",
+          };
+        },
+      });
+
       router.replace("/login");
     } catch (submissionError) {
       const message = getApiErrorMessage(
@@ -51,7 +71,6 @@ export default function ResetPasswordForm() {
         "Unable to update your password right now.",
       );
       setError(message);
-      toast.error("Reset failed", message);
     }
   };
 
