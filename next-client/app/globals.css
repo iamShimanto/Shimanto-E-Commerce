@@ -2,10 +2,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@layer base {
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-2: #f4f6fb;
+    --border: rgba(15, 23, 42, 0.08);
+    --text: #0f172a;
+    --text-muted: rgba(15, 23, 42, 0.62);
+    --primary: #5b5cf6;
+    --primary-hover: #4f46e5;
+    --focus-ring: rgba(91, 92, 246, 0.18);
+    --shadow-soft: 0 18px 60px -38px rgba(15, 23, 42, 0.35);
+  }
+
+  .dark {
+    --bg: #030513;
+    --surface: #070b1a;
+    --surface-2: #0b1230;
+    --border: rgba(226, 232, 240, 0.12);
+    --text: rgba(248, 250, 252, 0.92);
+    --text-muted: rgba(226, 232, 240, 0.62);
+    --primary: #7f88ff;
+    --primary-hover: #6f79ff;
+    --focus-ring: rgba(127, 136, 255, 0.14);
+    --shadow-soft: 0 20px 70px -44px rgba(0, 0, 0, 0.75);
+  }
+}
+
 html {
   color-scheme: light;
 }
 
 html.dark {
   color-scheme: dark;
+}
+
+@utility container {
+  @apply mx-auto px-4;
 }

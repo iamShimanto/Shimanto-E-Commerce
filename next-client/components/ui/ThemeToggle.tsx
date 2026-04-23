@@ -16,7 +16,8 @@ export default function ThemeToggle({ className }: ThemeToggleProps) {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   if (!mounted) {

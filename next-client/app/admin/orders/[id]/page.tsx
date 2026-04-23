@@ -1,7 +1,13 @@
-import React from "react";
+import AdminOrderDetailsPage from "@/components/admin/orders/AdminOrderDetailsPage";
 
-const page = () => {
-  return <div>page</div>;
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-export default page;
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
+
+  return <AdminOrderDetailsPage orderId={id} />;
+}
