@@ -832,7 +832,7 @@ export const getOrderByIdForAdmin: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Order ID is required");
   }
 
-  if (!Types.ObjectId.isValid(orderId)) {
+  if (!Types.ObjectId.isValid(orderId as string)) {
     throw new ApiError(404, "Order not found");
   }
 
@@ -840,7 +840,7 @@ export const getOrderByIdForAdmin: RequestHandler = async (req, res) => {
     ...adminOrderLookupStages,
     {
       $match: {
-        _id: new Types.ObjectId(orderId),
+        _id: new Types.ObjectId(orderId as string),
       },
     },
     ...adminOrderShapeStages,
