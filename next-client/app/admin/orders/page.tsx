@@ -1,9 +1,5 @@
-import React from 'react'
+import AdminOrdersPage from "@/components/admin/orders/AdminOrdersPage";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+export default function Page() {
+  return <AdminOrdersPage />;
 }
-
-export default page

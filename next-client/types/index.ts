@@ -60,3 +60,12 @@ export interface UpdateProfilePayload {
 	address?: string;
 	avatar?: File | Blob | null;
 }
+
+export interface Category {
+	_id?: string;
+	name: string;
+	slug: string;
+	thumbnail?: string;
+	createdAt?: string;
+	updatedAt?: string;
+}

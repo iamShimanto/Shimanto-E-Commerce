@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import type { PipelineStage } from "mongoose";
+import { Types, type PipelineStage } from "mongoose";
 import { ApiError } from "../../utils/ApiError";
 import { cartModel } from "../../models/cart.model";
 import Order from "../../models/order/order.model";
@@ -84,6 +84,56 @@ const buildSslGatewayResponse = (
 });
 
 const isSslCommerzLive = env.SSL_ISLIVE === "true";
+
+const adminOrderLookupStages: PipelineStage[] = [
+  {
+    $lookup: {
+      from: "users",
+      let: {
+        userId: "$user",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$_id", "$$userId"],
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            fullName: 1,
+            email: 1,
+            role: 1,
+            avatar: 1,
+          },
+        },
+      ],
+      as: "userData",
+    },
+  },
+  {
+    $unwind: {
+      path: "$userData",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+];
+
+const adminOrderShapeStages: PipelineStage[] = [
+  {
+    $addFields: {
+      userId: "$user",
+      user: "$userData" as never,
+    },
+  },
+  {
+    $project: {
+      userData: 0,
+    },
+  },
+];
 
 const adjustOrderInventory = async (order: {
   _id: unknown;
@@ -775,47 +825,41 @@ export const getOrderById: RequestHandler = async (req, res) => {
   return successResponse(res, "Order retrieved successfully", 200, order);
 };
 
+export const getOrderByIdForAdmin: RequestHandler = async (req, res) => {
+  const orderId = req.params.id;
+
+  if (!orderId) {
+    throw new ApiError(400, "Order ID is required");
+  }
+
+  if (!Types.ObjectId.isValid(orderId)) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  const [order] = await Order.aggregate([
+    ...adminOrderLookupStages,
+    {
+      $match: {
+        _id: new Types.ObjectId(orderId),
+      },
+    },
+    ...adminOrderShapeStages,
+  ]);
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  return successResponse(res, "Order retrieved successfully", 200, order);
+};
+
 export const getAllOrdersForAdmin: RequestHandler = async (req, res) => {
   const search = pickString(req.query.search);
   const page = Math.max(Number(req.query.page ?? 1) || 1, 1);
   const limit = Math.max(Number(req.query.limit ?? 10) || 10, 1);
   const skip = (page - 1) * limit;
 
-  const pipeline: PipelineStage[] = [
-    {
-      $lookup: {
-        from: "users",
-        let: {
-          userId: "$user",
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $eq: ["$_id", "$$userId"],
-              },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              fullName: 1,
-              email: 1,
-              role: 1,
-              avatar: 1,
-            },
-          },
-        ],
-        as: "userData",
-      },
-    },
-    {
-      $unwind: {
-        path: "$userData",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-  ];
+  const pipeline: PipelineStage[] = [...adminOrderLookupStages];
 
   if (search) {
     const searchRegex = new RegExp(escapeRegExp(search), "i");
@@ -853,17 +897,7 @@ export const getAllOrdersForAdmin: RequestHandler = async (req, res) => {
     {
       $limit: limit,
     },
-    {
-      $addFields: {
-        userId: "$user",
-        user: "$userData" as never,
-      },
-    },
-    {
-      $project: {
-        userData: 0,
-      },
-    },
+    ...adminOrderShapeStages,
   ]);
 
   return successResponse(res, "All orders retrieved successfully", 200, {
