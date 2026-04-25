@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify, type JWTPayload } from "jose";
 
+type AuthPayload = JWTPayload & {
+  _id?: string;
+  role?: string;
+  email?: string;
+};
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_KEY = JWT_SECRET ? new TextEncoder().encode(JWT_SECRET) : null;
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 
@@ -15,62 +24,26 @@ const AUTH_PAGES = [
 
 const PROTECTED_PREFIXES = ["/account", "/admin"];
 
-type ProfileAuthResult = {
-  authenticated: boolean;
-  role?: string;
-};
-
-function getRoleFromResponse(body: unknown) {
-  if (!body || typeof body !== "object") {
-    return undefined;
+async function verifyToken(token: string | undefined) {
+  if (!token || !JWT_KEY) {
+    return null;
   }
 
-  const data = (body as { data?: unknown }).data;
-  if (!data || typeof data !== "object") {
-    return undefined;
-  }
-
-  const role = (data as { role?: unknown }).role;
-  return typeof role === "string" ? role : undefined;
-}
-
-function upsertCookie(
-  cookieHeader: string,
-  cookieName: string,
-  cookieValue: string,
-) {
-  const segments = cookieHeader
-    .split(";")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .filter((segment) => !segment.startsWith(`${cookieName}=`));
-
-  segments.push(`${cookieName}=${cookieValue}`);
-  return segments.join("; ");
-}
-
-async function getProfileAuth(cookieHeader: string): Promise<ProfileAuthResult> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-      method: "GET",
-      headers: {
-        cookie: cookieHeader,
-      },
-      cache: "no-store",
+    const { payload } = await jwtVerify<AuthPayload>(token, JWT_KEY, {
+      algorithms: ["HS256"],
     });
 
-    if (!response.ok) {
-      return { authenticated: false };
-    }
-
-    const body = (await response.json()) as unknown;
     return {
-      authenticated: true,
-      role: getRoleFromResponse(body),
+      role: typeof payload.role === "string" ? payload.role : undefined,
     };
   } catch {
-    return { authenticated: false };
+    return null;
   }
+}
+
+function getRole(payload: AuthPayload | null) {
+  return typeof payload?.role === "string" ? payload.role : undefined;
 }
 
 function getCookieValue(setCookieHeader: string | null, cookieName: string) {
@@ -114,41 +87,34 @@ async function refreshAccessToken(request: NextRequest) {
 }
 
 async function resolveAuth(request: NextRequest) {
-  const cookieHeader = request.headers.get("cookie") ?? "";
+  const accessToken = request.cookies.get("jwt_access")?.value;
+  const accessAuth = await verifyToken(accessToken);
 
-  if (!cookieHeader) {
-    return {
-      authenticated: false,
-    };
-  }
-
-  const profileAuth = await getProfileAuth(cookieHeader);
-
-  if (profileAuth.authenticated) {
+  if (accessAuth) {
     return {
       authenticated: true,
-      role: profileAuth.role,
+      role: getRole(accessAuth),
       refreshedAccessToken: null,
     };
   }
 
-  const refreshedAccessToken = await refreshAccessToken(request);
+  const refreshToken = request.cookies.get("jwt_refresh")?.value;
+  const refreshAuth = await verifyToken(refreshToken);
 
-  if (refreshedAccessToken) {
-    const refreshedCookieHeader = upsertCookie(
-      cookieHeader,
-      "jwt_access",
-      refreshedAccessToken,
-    );
-    const refreshedProfileAuth = await getProfileAuth(refreshedCookieHeader);
+  if (refreshAuth) {
+    const refreshedAccessToken = await refreshAccessToken(request);
 
-    if (refreshedProfileAuth.authenticated) {
+    if (refreshedAccessToken) {
       return {
         authenticated: true,
-        role: refreshedProfileAuth.role,
+        role: getRole(refreshAuth),
         refreshedAccessToken,
       };
     }
+
+    return {
+      authenticated: false,
+    };
   }
 
   return {
@@ -172,8 +138,11 @@ function getPostLoginPath(role?: string) {
   return role === "admin" || role === "staff" ? "/admin" : "/account/profile";
 }
 
-function redirectTo(request: NextRequest, destination: string) {
-  return NextResponse.redirect(new URL(destination, request.url));
+function redirectWithCleanup(request: NextRequest, destination: string) {
+  const response = NextResponse.redirect(new URL(destination, request.url));
+  response.cookies.delete("jwt_access");
+  response.cookies.delete("jwt_refresh");
+  return response;
 }
 
 function attachAccessCookie(
@@ -221,7 +190,7 @@ export async function proxy(request: NextRequest) {
     if (!resolvedAuth.authenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
-      return redirectTo(request, loginUrl.toString());
+      return redirectWithCleanup(request, loginUrl.toString());
     }
 
     if (resolvedAuth.role !== "admin" && resolvedAuth.role !== "staff") {
@@ -241,7 +210,7 @@ export async function proxy(request: NextRequest) {
     if (!resolvedAuth.authenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
-      return redirectTo(request, loginUrl.toString());
+      return redirectWithCleanup(request, loginUrl.toString());
     }
 
     return attachAccessCookie(
@@ -253,7 +222,7 @@ export async function proxy(request: NextRequest) {
   if (isProtectedPath(pathname) && !resolvedAuth.authenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", `${pathname}${search}`);
-    return redirectTo(request, loginUrl.toString());
+    return redirectWithCleanup(request, loginUrl.toString());
   }
 
   return attachAccessCookie(
