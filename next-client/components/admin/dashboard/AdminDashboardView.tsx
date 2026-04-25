@@ -269,7 +269,7 @@ function TwoColumnPanels({
               recentUsers.map((user: DashboardRecentUser) => (
                 <ListRow
                   key={user._id}
-                  title={user.fullName || user.email}
+                  title={user.fullName || user.email || "Unknown user"}
                   subtitle={user.email}
                   meta={user.role || "user"}
                   accent={user.isVerified ? "success" : "warning"}

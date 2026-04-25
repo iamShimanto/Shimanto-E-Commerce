@@ -1,9 +1,5 @@
-import React from 'react'
+import AdminProductUpsertPage from "@/components/admin/products/AdminProductUpsertPage";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+export default function Page() {
+  return <AdminProductUpsertPage mode="create" />;
 }
-
-export default page

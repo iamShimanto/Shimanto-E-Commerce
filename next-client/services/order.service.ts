@@ -77,13 +77,13 @@ export const orderApi = baseApi.injectEndpoints({
       ApiResponse<AdminOrderListPayload>,
       { page?: number; limit?: number; search?: string } | void
     >({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: "/order/all",
         method: "GET",
         params: {
-          page: params.page ?? 1,
-          limit: params.limit ?? 10,
-          ...(params.search ? { search: params.search } : {}),
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 10,
+          ...(params?.search ? { search: params.search } : {}),
         },
       }),
       providesTags: (result) => {
