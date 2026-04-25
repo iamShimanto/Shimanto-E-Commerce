@@ -1,7 +1,12 @@
-import React from "react";
+import AdminProductDetailsPage from "@/components/admin/products/AdminProductDetailsPage";
 
-const page = () => {
-  return <div>page</div>;
+type PageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
 };
 
-export default page;
+export default async function Page({ params }: PageProps) {
+  const { slug } = await params;
+  return <AdminProductDetailsPage slug={slug} />;
+}
