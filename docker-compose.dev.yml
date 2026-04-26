@@ -58,6 +58,24 @@ services:
     depends_on:
       - backend
 
+  next-client:
+    build:
+      context: ./next-client
+      dockerfile: Dockerfile
+      target: dev
+    container_name: next-client-dev
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./next-client/.env.local
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./next-client:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
   redis:
     image: redis:7-alpine
     container_name: redis-dev

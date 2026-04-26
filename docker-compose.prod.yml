@@ -45,6 +45,20 @@ services:
       - backend
     restart: unless-stopped
 
+  next-client:
+    build:
+      context: ./next-client
+      dockerfile: Dockerfile
+      target: prod
+    container_name: next-client
+    ports:
+      - "127.0.0.1:3001:3001"
+    env_file:
+      - ./next-client/.env.production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: redis
