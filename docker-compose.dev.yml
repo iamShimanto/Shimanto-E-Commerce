@@ -21,6 +21,7 @@ services:
       - ./server:/app
       - /app/node_modules
     command: pnpm dev
+    restart: unless-stopped
 
   admin:
     build:
@@ -34,11 +35,14 @@ services:
       - ./admin/.env
     environment:
       CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
     volumes:
       - ./admin:/app
       - /app/node_modules
     depends_on:
       - backend
+    command: pnpm dev --host 0.0.0.0 --port 5173
+    restart: unless-stopped
 
   client:
     build:
@@ -52,11 +56,14 @@ services:
       - ./client/.env
     environment:
       CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
     volumes:
       - ./client:/app
       - /app/node_modules
     depends_on:
       - backend
+    command: pnpm dev --host 0.0.0.0 --port 5174
+    restart: unless-stopped
 
   next-client:
     build:
@@ -69,12 +76,19 @@ services:
     env_file:
       - ./next-client/.env.local
     environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
       CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
+      WATCHPACK_POLLING: "true"
     volumes:
       - ./next-client:/app
       - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
+    command: pnpm dev --hostname 0.0.0.0 --port 3001 --webpack
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
