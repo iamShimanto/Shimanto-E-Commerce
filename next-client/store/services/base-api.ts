@@ -35,7 +35,11 @@ function isAuthSessionMutation(endpoint: string) {
 }
 
 function isMissingRefreshTokenError(error: FetchBaseQueryError) {
-  return error.status === 400 || error.status === 401;
+  if (error.status !== 400) return false;
+  const data = (error as { data?: unknown }).data;
+  if (!data || typeof data !== "object") return false;
+  const message = "message" in data ? String((data as { message?: unknown }).message ?? "") : "";
+  return message.toLowerCase().includes("missing refresh");
 }
 
 const triggerLogout = async (
@@ -117,6 +121,13 @@ const baseQueryWithReauth: BaseQueryFn<
       refreshTokenUnavailable = false;
       result = await rawBaseQuery(args, api, extraOptions);
     } else {
+      if (refreshAttempt.error && isMissingRefreshTokenError(refreshAttempt.error)) {
+        refreshTokenUnavailable = true;
+        return {
+          error: refreshAttempt.error,
+        };
+      }
+
       await triggerLogout(api, extraOptions);
       if (refreshAttempt.error) {
         if (isMissingRefreshTokenError(refreshAttempt.error)) {

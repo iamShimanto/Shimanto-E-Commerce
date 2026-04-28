@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGetProfileQuery } from "@/services/auth.service";
 import DashboardPageHeader from "./dashboard/DashboardPageHeader";
 import AdminDashboardView from "./dashboard/AdminDashboardView";
 import StaffDashboardView from "./dashboard/StaffDashboardView";
 import { useGetDashboardStatsQuery } from "@/services/stats.service";
+import Skeleton from "@/components/ui/Skeleton";
 
 export default function AdminDashboardHome() {
   const router = useRouter();
@@ -23,6 +25,20 @@ export default function AdminDashboardHome() {
   const role = String(user?.role || "").toLowerCase();
   const isStaff = role === "staff";
   const isAdmin = role === "admin";
+  const isAllowed = isStaff || isAdmin;
+
+  useEffect(() => {
+    if (profileLoading) return;
+
+    if (!user) {
+      router.replace(`/login?next=${encodeURIComponent("/admin")}`);
+      return;
+    }
+
+    if (!isAllowed) {
+      router.replace("/");
+    }
+  }, [isAllowed, profileLoading, router, user]);
 
   const errorText =
     typeof error === "object" && error && "data" in error
@@ -36,12 +52,25 @@ export default function AdminDashboardHome() {
           "Failed to load dashboard stats")
         : "Failed to load dashboard stats";
 
-  if (profileLoading || (!isStaff && !isAdmin && !user)) {
+  if (profileLoading || !user || !isAllowed) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center px-4">
-        <div className="text-sm font-semibold text-slate-500 dark:text-white/60">
-          Loading…
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+          <Skeleton className="h-11 w-28 rounded-full" />
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+
+        <Skeleton className="h-80 w-full" />
       </div>
     );
   }
@@ -68,8 +97,9 @@ export default function AdminDashboardHome() {
       {statsData?.data ? <AdminDashboardView data={statsData.data} /> : null}
 
       {!statsData?.data && !isError ? (
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-6 text-center text-sm font-semibold text-slate-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white/60">
-          Loading dashboard data…
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-64 max-w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
       ) : null}
     </div>
