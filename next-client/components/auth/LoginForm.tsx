@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FiLock, FiMail } from "react-icons/fi";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -17,10 +17,17 @@ const initialState = {
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const [form, setForm] = useState(initialState);
   const [error, setError] = useState("");
+
+  const nextParam = searchParams.get("next");
+  const nextUrl =
+    typeof nextParam === "string" && nextParam.trim().startsWith("/") && !nextParam.trim().startsWith("//")
+      ? nextParam.trim()
+      : "/";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,7 +59,7 @@ export default function LoginForm() {
         },
       });
 
-      router.replace("/");
+      router.replace(nextUrl);
       router.refresh();
     } catch (submissionError) {
       const message = getApiErrorMessage(
