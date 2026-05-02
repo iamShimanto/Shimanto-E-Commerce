@@ -26,7 +26,7 @@ router.post(
 );
 router.post(
   "/login",
-  rateLimit({ limit: 10, windowSec: 300, keyPrefix: "rl:login" }),
+  rateLimit({ limit: 100, windowSec: 300, keyPrefix: "rl:login" }),
   asyncHandler(auth.logInUser),
 );
 
