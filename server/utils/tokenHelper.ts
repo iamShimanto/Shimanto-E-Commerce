@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import crypto from "crypto";
 
 interface jwtUserPayload {
-  _id: Types.ObjectId;
+  id: number;
   email: string;
   role: string;
 }
@@ -12,7 +12,7 @@ interface jwtUserPayload {
 export const generateAccessToken = (user: JwtPayload): string => {
   return jwt.sign(
     {
-      _id: user._id,
+      id: user.id,
       email: user.email,
       role: user.role,
     },
@@ -26,7 +26,7 @@ export const generateAccessToken = (user: JwtPayload): string => {
 export const generateRefreshToken = (user: jwtUserPayload): string => {
   return jwt.sign(
     {
-      _id: user._id,
+      id: user.id,
       email: user.email,
       role: user.role,
     },

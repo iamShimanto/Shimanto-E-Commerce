@@ -6,7 +6,6 @@ export default function RequireAuth({ children }) {
     const { data: user, isLoading, isError, error } = useProfileQuery(undefined, {
         refetchOnMountOrArgChange: true,
     })
-
     if (isLoading) {
         return (
             <div

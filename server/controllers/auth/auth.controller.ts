@@ -7,11 +7,29 @@ import * as tokenHelper from "../../utils/tokenHelper";
 import { env } from "../../Config/envConfig";
 import * as cloudinaryService from "../../services/CloudinaryServices";
 import { ApiError } from "../../utils/ApiError";
-import { UserModel } from "../../models/user.model";
 import { successResponse } from "../../utils/successResponse";
 import redis from "../../Config/redis";
 import { delCache, getCache, setCache } from "../../utils/redisCache";
-import { Types } from "mongoose";
+import { prisma } from "../../Config/prisma";
+import bcrypt from "bcrypt";
+
+const userPublicSelect = {
+  id: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  address: true,
+  avatar: true,
+  role: true,
+  isVerified: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const userPasswordSelect = {
+  id: true,
+  password: true,
+} as const;
 
 export const craeteUser: RequestHandler = async (req, res) => {
   const { fullName, email, password, phone, address } = req.body;
@@ -22,18 +40,25 @@ export const craeteUser: RequestHandler = async (req, res) => {
   if (password.length < 6)
     throw new ApiError(400, "Password must be 6 characters");
 
-  const isExistUser = await UserModel.findOne({ email });
+  const isExistUser = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
   if (isExistUser) throw new ApiError(400, "User already Exist!");
 
   const emailOTP = generateOtp();
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = new UserModel({
-    fullName,
-    email,
-    password,
-    phone,
-    address,
-    isVerified: false,
+  const user = await prisma.user.create({
+    data: {
+      fullName,
+      email,
+      password: hashedPassword,
+      phone,
+      address,
+      isVerified: false,
+    },
   });
 
   const otpKey = `otp:email:${email.toLowerCase()}`;
@@ -42,7 +67,7 @@ export const craeteUser: RequestHandler = async (req, res) => {
   const template = templates.emailTemplate;
 
   await sendMail(email, emailOTP, "Email Verification Code", template);
-  await user.save();
+  // await user.save();
 
   return successResponse(
     res,
@@ -62,7 +87,14 @@ export const verifyOtp: RequestHandler = async (req, res) => {
   if (!savedOtp) throw new ApiError(400, "OTP Expired or invalid");
   if (savedOtp !== String(otp)) throw new ApiError(400, "OTP is not correct");
 
-  await UserModel.updateOne({ email }, { $set: { isVerified: true } });
+  await prisma.user.update({
+    where: {
+      email,
+    },
+    data: {
+      isVerified: true,
+    },
+  });
 
   const template = templates.successfullVerifyTemplate;
 
@@ -79,7 +111,11 @@ export const resendOtp: RequestHandler = async (req, res) => {
   if (!email || !isValidEmail(email))
     throw new ApiError(400, "Invalid Request");
 
-  const user = await UserModel.findOne({ email });
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
   if (!user) throw new ApiError(404, "User not found");
   if (user.isVerified) throw new ApiError(400, "Email already verified");
 
@@ -113,10 +149,14 @@ export const logInUser: RequestHandler = async (req, res) => {
   if (!isValidEmail(email)) throw new ApiError(400, "Enter a valid email");
   if (!password) throw new ApiError(400, "Password is required");
 
-  const user = await UserModel.findOne({ email });
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
   if (!user) throw new ApiError(400, "Invalid Request");
 
-  const checkPass = await user.comparePassword(password);
+  const checkPass = await bcrypt.compare(password, user.password);
   if (!checkPass) throw new ApiError(400, "Invalid Request");
 
   if (!user.isVerified) throw new ApiError(400, "Email not verified");
@@ -153,7 +193,11 @@ export const resetPassword: RequestHandler = async (req, res) => {
   if (!email) throw new ApiError(400, "Email is required");
   if (!isValidEmail(email)) throw new ApiError(400, "Enter a valid email");
 
-  const user = await UserModel.findOne({ email });
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
   if (!user) {
     return successResponse(
       res,
@@ -212,11 +256,23 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Invalid or expired reset link");
   }
 
-  const user = await UserModel.findOne({ email: cached.email });
+  const user = await prisma.user.findUnique({
+    where: {
+      email: cached.email,
+    },
+  });
   if (!user) throw new ApiError(400, "Invalid or expired reset link");
 
-  user.password = newPassword;
-  await user.save();
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: {
+      email: cached.email,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
 
   await delCache(tokenKey); // delete cache
   await delCache(`resetpass:cooldown:${cached.email}`);
@@ -225,9 +281,23 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
 };
 
 export const getProfile: RequestHandler = async (req, res) => {
-  const user = await UserModel.findById(req.user._id).select(
-    "-password -otp -otpExpires -updatedAt",
-  );
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.id,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      address: true,
+      avatar: true,
+      role: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 
   if (!user) throw new ApiError(400, "Invalid Request");
 
@@ -238,9 +308,39 @@ export const updateProfile: RequestHandler = async (req, res) => {
   const { fullName, phone, address } = req.body;
   const avatar = req.file;
 
-  const user = await UserModel.findById(req.user._id).select(
-    "-password -otp -otpExpires -resetPassToken -resetPassLinkExpires",
-  );
+  const phoneValue =
+    typeof phone === "string"
+      ? phone.trim()
+        ? Number(phone.trim())
+        : undefined
+      : typeof phone === "number"
+        ? phone
+        : undefined;
+
+  if (
+    typeof phoneValue !== "undefined" &&
+    (!Number.isInteger(phoneValue) || phoneValue <= 0)
+  ) {
+    throw new ApiError(400, "Invalid phone number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.id,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      address: true,
+      avatar: true,
+      role: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 
   if (!user) throw new ApiError(400, "Invalid Request");
 
@@ -258,10 +358,20 @@ export const updateProfile: RequestHandler = async (req, res) => {
   }
 
   if (fullName) user.fullName = fullName;
-  if (phone) user.phone = phone;
+  if (typeof phoneValue !== "undefined") user.phone = phoneValue;
   if (address) user.address = address;
 
-  await user.save();
+  await prisma.user.update({
+    where: {
+      id: req.user.id,
+    },
+    data: {
+      fullName: user.fullName,
+      phone: user.phone,
+      address: user.address,
+      avatar: user.avatar,
+    },
+  });
 
   return successResponse(res, "User Profile Updated Successfull", 200);
 };
@@ -273,9 +383,11 @@ export const refreshToken: RequestHandler = async (req, res) => {
   const decoded = tokenHelper.verifyToken(refreshToken);
   if (!decoded) throw new ApiError(400, "Invalid Token");
 
-  const user = await UserModel.findOne({
-    _id: decoded._id,
-    email: decoded.email,
+  const user = await prisma.user.findUnique({
+    where: {
+      id: decoded.id,
+      email: decoded.email,
+    },
   });
 
   if (!user) throw new ApiError(400, "Invalid Request");
@@ -314,10 +426,6 @@ export const logOutUser: RequestHandler = async (req, res) => {
   return successResponse(res, "Logout Successful", 200);
 };
 
-function escapeRegex(input: string) {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export const getAllUsers: RequestHandler = async (req, res) => {
   const pageRaw = Number(req.query.page ?? 1);
   const limitRaw = Number(req.query.limit ?? 10);
@@ -348,23 +456,34 @@ export const getAllUsers: RequestHandler = async (req, res) => {
         ? false
         : undefined;
 
-  const filter: Record<string, any> = {};
+  const where: Record<string, any> = {};
+  const and: Record<string, any>[] = [];
 
-  if (role) filter.role = role;
-  if (typeof isVerified === "boolean") filter.isVerified = isVerified;
+  if (role) where.role = role;
+  if (typeof isVerified === "boolean") where.isVerified = isVerified;
   if (typeof hasAvatar === "boolean") {
-    filter.avatar = hasAvatar
-      ? { $exists: true, $ne: "" }
-      : { $in: [null, ""] };
+    and.push(
+      hasAvatar
+        ? {
+            AND: [{ avatar: { not: null } }, { avatar: { not: "" } }],
+          }
+        : {
+            OR: [{ avatar: null }, { avatar: "" }],
+          },
+    );
   }
 
   if (search) {
-    const regex = new RegExp(escapeRegex(search), "i");
-    const or: any[] = [{ fullName: regex }, { email: regex }];
+    const or: Record<string, any>[] = [
+      { fullName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
     const phoneNum = Number(search);
     if (Number.isFinite(phoneNum)) or.push({ phone: phoneNum });
-    filter.$or = or;
+    and.push({ OR: or });
   }
+
+  if (and.length) where.AND = and;
 
   const allowedSortFields = new Set([
     "createdAt",
@@ -377,18 +496,17 @@ export const getAllUsers: RequestHandler = async (req, res) => {
   const sortByRaw = String(req.query.sortBy ?? "createdAt");
   const sortBy = allowedSortFields.has(sortByRaw) ? sortByRaw : "createdAt";
   const sortOrderRaw = String(req.query.sortOrder ?? "desc").toLowerCase();
-  const sortOrder = sortOrderRaw === "asc" ? 1 : -1;
-
-  const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder };
+  const sortOrder = sortOrderRaw === "asc" ? "asc" : "desc";
 
   const [users, total] = await Promise.all([
-    UserModel.find(filter)
-      .select("-password -__v")
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    UserModel.countDocuments(filter),
+    prisma.user.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder } as Record<string, "asc" | "desc">,
+      skip,
+      take: limit,
+      select: userPublicSelect,
+    }),
+    prisma.user.count({ where }),
   ]);
 
   return successResponse(res, "Users fetched", 200, {
@@ -403,37 +521,53 @@ export const getAllUsers: RequestHandler = async (req, res) => {
 };
 
 export const getUserById: RequestHandler = async (req, res) => {
-  const id = String((req.params as any).id);
-  if (!Types.ObjectId.isValid(id)) {
+  const id = Number((req.params as any).id);
+  if (!Number.isInteger(id) || id <= 0) {
     throw new ApiError(400, "Invalid user id");
   }
 
-  const user = await UserModel.findById(id).select("-password -__v");
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: userPublicSelect,
+  });
   if (!user) throw new ApiError(404, "User not found");
 
   return successResponse(res, "User fetched", 200, user);
 };
 
 export const verifyUser: RequestHandler = async (req, res) => {
-  const id = String((req.params as any).id);
-  if (!Types.ObjectId.isValid(id)) {
+  const id = Number((req.params as any).id);
+  if (!Number.isInteger(id) || id <= 0) {
     throw new ApiError(400, "Invalid user id");
   }
 
-  const user = await UserModel.findByIdAndUpdate(
-    id,
-    { $set: { isVerified: true } },
-    { new: true },
-  ).select("-password -__v");
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: userPublicSelect,
+  });
   if (!user) throw new ApiError(404, "User not found");
 
-  return successResponse(res, "User verified successfully", 200, user);
+  const updatedUser = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      isVerified: true,
+    },
+    select: userPublicSelect,
+  });
+
+  return successResponse(res, "User verified successfully", 200, updatedUser);
 };
 
 export const updateRole: RequestHandler = async (req, res) => {
-  const id = String((req.params as any).id);
+  const id = Number((req.params as any).id);
 
-  if (!Types.ObjectId.isValid(id as any)) {
+  if (!Number.isInteger(id) || id <= 0) {
     throw new ApiError(400, "Invalid user id");
   }
 
@@ -448,15 +582,25 @@ export const updateRole: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Invalid role");
   }
 
-  const user = await UserModel.findByIdAndUpdate(
-    id,
-    { $set: { role } },
-    { new: true },
-  ).select("-password -__v");
-
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: userPublicSelect,
+  });
   if (!user) throw new ApiError(404, "User not found");
 
-  return successResponse(res, "User Role Updated", 200, user);
+  const updatedUser = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      role,
+    },
+    select: userPublicSelect,
+  });
+
+  return successResponse(res, "User Role Updated", 200, updatedUser);
 };
 
 export const changePassword: RequestHandler = async (req, res) => {
@@ -465,11 +609,33 @@ export const changePassword: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Current and new password are required");
   }
 
-  const user = await UserModel.findById(req.user._id);
+  const userId = Number(req.user.id);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new ApiError(400, "Invalid Request");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: userPasswordSelect,
+  });
+
   if (!user) throw new ApiError(400, "Invalid Request");
-  const isMatch = await user.comparePassword(currentPassword);
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
   if (!isMatch) throw new ApiError(400, "Current password is incorrect");
-  user.password = newPassword;
-  await user.save();
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
   return successResponse(res, "Password changed successfully", 200);
 };

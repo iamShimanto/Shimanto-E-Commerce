@@ -33,6 +33,7 @@ coverage/
 .DS_Store
 Thumbs.db
 .vscode/
+.pnpm-store/
 .idea/
 
 # optional: lockfiles you may or may not want ignored
