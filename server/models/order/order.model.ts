@@ -28,7 +28,7 @@ interface IShippingAddress {
 }
 
 interface IOrder {
-  user: Types.ObjectId;
+  user: number;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
   paymentMethod: PaymentMethod;
@@ -120,9 +120,9 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
 const orderSchema = new Schema<IOrder>(
   {
     user: {
-      type: Types.ObjectId,
-      ref: "User",
+      type: Number,
       required: true,
+      min: 1,
     },
     items: {
       type: [orderItemSchema],

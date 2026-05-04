@@ -31,6 +31,18 @@ const userPasswordSelect = {
   password: true,
 } as const;
 
+const requireAuthenticatedUserId = (
+  req: { user?: { id?: unknown } },
+): number => {
+  const userId = Number(req.user?.id);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  return userId;
+};
+
 export const craeteUser: RequestHandler = async (req, res) => {
   const { fullName, email, password, phone, address } = req.body;
 
@@ -281,9 +293,11 @@ export const resetPasswordChange: RequestHandler = async (req, res) => {
 };
 
 export const getProfile: RequestHandler = async (req, res) => {
+  const userId = requireAuthenticatedUserId(req);
+
   const user = await prisma.user.findUnique({
     where: {
-      id: req.user.id,
+      id: userId,
     },
     select: {
       id: true,
@@ -305,6 +319,7 @@ export const getProfile: RequestHandler = async (req, res) => {
 };
 
 export const updateProfile: RequestHandler = async (req, res) => {
+  const userId = requireAuthenticatedUserId(req);
   const { fullName, phone, address } = req.body;
   const avatar = req.file;
 
@@ -326,7 +341,7 @@ export const updateProfile: RequestHandler = async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: {
-      id: req.user.id,
+      id: userId,
     },
     select: {
       id: true,
@@ -363,7 +378,7 @@ export const updateProfile: RequestHandler = async (req, res) => {
 
   await prisma.user.update({
     where: {
-      id: req.user.id,
+      id: userId,
     },
     data: {
       fullName: user.fullName,
@@ -392,7 +407,7 @@ export const refreshToken: RequestHandler = async (req, res) => {
 
   if (!user) throw new ApiError(400, "Invalid Request");
 
-  const accessToken = tokenHelper.generateAccessToken(decoded);
+  const accessToken = tokenHelper.generateAccessToken(user);
 
   const isProd = env.NODE_ENV === "production";
 
@@ -609,10 +624,7 @@ export const changePassword: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Current and new password are required");
   }
 
-  const userId = Number(req.user.id);
-  if (!Number.isInteger(userId) || userId <= 0) {
-    throw new ApiError(400, "Invalid Request");
-  }
+  const userId = requireAuthenticatedUserId(req);
 
   const user = await prisma.user.findUnique({
     where: {

@@ -5,9 +5,20 @@ import { cartModel } from "../../models/cart.model";
 import { successResponse } from "../../utils/successResponse";
 import { Types } from "mongoose";
 // import { delCache, getCache, setCache } from "../../utils/redisCache";
-import { UserModel } from "../../models/user.model";
+import { prisma } from "../../Config/prisma";
+
+const getUserIdFromRequest = (req: {
+  user?: { id?: unknown };
+}): number => {
+  const userId = Number(req.user?.id);
+  if (!Number.isInteger(userId) || userId < 1) {
+    throw new ApiError(401, "Unauthorized");
+  }
+  return userId;
+};
 
 export const addToCart: RequestHandler = async (req, res) => {
+  const userId = getUserIdFromRequest(req);
   const { productId, sku, quantity } = req.body;
 
   if (!productId || sku === undefined || quantity === undefined)
@@ -34,7 +45,7 @@ export const addToCart: RequestHandler = async (req, res) => {
   const finalPrice = productData.price - discountAmount;
   const subTotal = finalPrice * parsedQuantity;
 
-  const isExistCart = await cartModel.findOne({ user: req.user._id });
+  const isExistCart = await cartModel.findOne({ user: userId });
 
   if (isExistCart) {
     const isExistSku = isExistCart.items.some((item) => item.sku == sku);
@@ -51,7 +62,7 @@ export const addToCart: RequestHandler = async (req, res) => {
   }
 
   await cartModel.create({
-    user: req.user._id,
+    user: userId,
     items: [
       {
         product: productId,
@@ -65,8 +76,9 @@ export const addToCart: RequestHandler = async (req, res) => {
 };
 
 export const getCart: RequestHandler = async (req, res) => {
+  const userId = getUserIdFromRequest(req);
   const cartData = await cartModel
-    .findOne({ user: req.user._id })
+    .findOne({ user: userId })
     .populate("items.product", "title slug price discountPercentage thumbnail")
     .lean();
   if (!cartData) throw new ApiError(404, "Cart not found");
@@ -74,6 +86,7 @@ export const getCart: RequestHandler = async (req, res) => {
 };
 
 export const updateCart: RequestHandler = async (req, res) => {
+  const userId = getUserIdFromRequest(req);
   const { productId, sku, quantity } = req.body;
 
   if (!productId || sku === undefined || quantity === undefined) {
@@ -109,7 +122,7 @@ export const updateCart: RequestHandler = async (req, res) => {
   const subTotal = finalPrice * parsedQuantity;
 
   const cart = await cartModel.findOne({
-    user: req.user._id,
+    user: userId,
     "items.sku": sku,
   });
 
@@ -126,6 +139,7 @@ export const updateCart: RequestHandler = async (req, res) => {
 };
 
 export const removeFromCart: RequestHandler = async (req, res) => {
+  const userId = getUserIdFromRequest(req);
   const { productId, sku } = req.body;
 
   if (!productId || sku === undefined) {
@@ -139,7 +153,7 @@ export const removeFromCart: RequestHandler = async (req, res) => {
     throw new ApiError(400, "Invalid Product Id");
   }
   const cart = await cartModel.findOne({
-    user: req.user._id,
+    user: userId,
     "items.sku": sku,
   });
 
@@ -152,7 +166,8 @@ export const removeFromCart: RequestHandler = async (req, res) => {
 };
 
 export const clearCart: RequestHandler = async (req, res) => {
-  const cart = await cartModel.findOneAndDelete({ user: req.user._id });
+  const userId = getUserIdFromRequest(req);
+  const cart = await cartModel.findOneAndDelete({ user: userId });
   if (!cart) {
     throw new ApiError(404, "Cart not found");
   }
@@ -171,29 +186,23 @@ export const getAllCart: RequestHandler = async (req, res) => {
   let cartFilter: Record<string, unknown> = {};
 
   if (trimmedSearch) {
-    const matchingUsers = await UserModel.find(
-      {
-        $or: [
-          { fullName: { $regex: trimmedSearch, $options: "i" } },
-          { email: { $regex: trimmedSearch, $options: "i" } },
+    const matchingUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { fullName: { contains: trimmedSearch, mode: "insensitive" } },
+          { email: { contains: trimmedSearch, mode: "insensitive" } },
         ],
       },
-      { _id: 1 },
-    ).lean();
+      select: { id: true },
+    });
 
-    const userIds = matchingUsers.map((u) => u._id);
-    cartFilter = userIds.length
-      ? { user: { $in: userIds } }
-      : { user: { $in: [] } };
+    const userIds = matchingUsers.map((u) => u.id);
+    cartFilter = userIds.length ? { user: { $in: userIds } } : { user: { $in: [] } };
   }
 
   const [carts, total] = await Promise.all([
     cartModel
       .find(cartFilter)
-      .populate({
-        path: "user",
-        select: "fullName email",
-      })
       .populate(
         "items.product",
         "title slug price discountPercentage thumbnail",
@@ -204,8 +213,39 @@ export const getAllCart: RequestHandler = async (req, res) => {
     cartModel.countDocuments(cartFilter),
   ]);
 
+  const uniqueUserIds = Array.from(
+    new Set(
+      carts
+        .map((cart) => cart.user)
+        .filter((value): value is number => typeof value === "number"),
+    ),
+  );
+
+  const users = uniqueUserIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: uniqueUserIds } },
+        select: { id: true, fullName: true, email: true },
+      })
+    : [];
+  const userById = new Map(users.map((u) => [u.id, u] as const));
+
+  const cartsWithUser = carts.map((cart) => {
+    const plain = cart.toObject();
+    const user = userById.get(cart.user);
+    return {
+      ...plain,
+      user: user
+        ? {
+            _id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+          }
+        : null,
+    };
+  });
+
   return successResponse(res, "All carts retrieved successfully", 200, {
-    data: carts,
+    data: cartsWithUser,
     pagination: {
       total,
       page,
