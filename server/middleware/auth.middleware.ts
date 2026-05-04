@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../Config/envConfig";
 import { ApiError } from "../utils/ApiError";
+import type { jwtUserPayload } from "../utils/tokenHelper";
 
 export const authMiddleWare: RequestHandler = (req, res, next) => {
   const accessToken = req.cookies?.jwt_access;
@@ -17,7 +18,16 @@ export const authMiddleWare: RequestHandler = (req, res, next) => {
       throw new ApiError(401, "Unauthorized");
     }
 
-    req.user = decoded as any; 
+    const payload = decoded as Partial<jwtUserPayload>;
+    const id = Number(payload.id);
+    const email = typeof payload.email === "string" ? payload.email : "";
+    const role = typeof payload.role === "string" ? payload.role : "";
+
+    if (!Number.isInteger(id) || id < 1 || !email || !role) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    req.user = { id, email, role };
     return next();
   } catch {
     throw new ApiError(401, "Unauthorized");

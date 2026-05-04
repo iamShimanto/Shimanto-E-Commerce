@@ -6,8 +6,7 @@ import type {
   FetchBaseQueryError,
 } from "@reduxjs/toolkit/query";
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,

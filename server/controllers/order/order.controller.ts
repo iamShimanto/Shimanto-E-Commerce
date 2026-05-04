@@ -193,10 +193,10 @@ const adjustOrderInventory = async (order: {
 };
 
 export const checkout: RequestHandler = async (req, res) => {
-  const userId = req.user?._id;
+  const userId = Number(req.user?.id);
   const { shippingAddress, paymentMethod, insideDhaka } = req.body;
 
-  if (!userId) {
+  if (!Number.isInteger(userId) || userId < 1) {
     throw new ApiError(401, "Unauthorized");
   }
 
@@ -793,9 +793,9 @@ export const sslcommerzCancel: RequestHandler = async (req, res) => {
 };
 
 export const getAllOrders: RequestHandler = async (req, res) => {
-  const userId = req.user?._id;
+  const userId = Number(req.user?.id);
 
-  if (!userId) {
+  if (!Number.isInteger(userId) || userId < 1) {
     throw new ApiError(401, "Unauthorized");
   }
 
@@ -805,10 +805,10 @@ export const getAllOrders: RequestHandler = async (req, res) => {
 };
 
 export const getOrderById: RequestHandler = async (req, res) => {
-  const userId = req.user?._id;
+  const userId = Number(req.user?.id);
   const orderId = req.params.id;
 
-  if (!userId) {
+  if (!Number.isInteger(userId) || userId < 1) {
     throw new ApiError(401, "Unauthorized");
   }
 
@@ -951,10 +951,10 @@ export const updateOrderStatus: RequestHandler = async (req, res) => {
 };
 
 export const cancelOrder: RequestHandler = async (req, res) => {
-  const userId = req.user?._id;
+  const userId = Number(req.user?.id);
   const orderId = req.params.id;
 
-  if (!userId) {
+  if (!Number.isInteger(userId) || userId < 1) {
     throw new ApiError(401, "Unauthorized");
   }
   if (!orderId) {

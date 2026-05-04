@@ -8,7 +8,7 @@ export interface CartItem {
 }
 
 export interface Cart {
-  user: Types.ObjectId;
+  user: number;
   items: CartItem[];
   totalItems: number;
 }
@@ -43,10 +43,10 @@ const cartItemSchema = new Schema<CartItem>(
 const cartSchema = new Schema<Cart>(
   {
     user: {
-      type: Types.ObjectId,
-      ref: "User",
+      type: Number,
       required: true,
       unique: true,
+      min: 1,
     },
     items: [cartItemSchema],
     totalItems: {

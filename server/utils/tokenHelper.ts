@@ -1,15 +1,14 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "../Config/envConfig";
-import { Types } from "mongoose";
 import crypto from "crypto";
 
-interface jwtUserPayload {
+export interface jwtUserPayload {
   id: number;
   email: string;
   role: string;
 }
 
-export const generateAccessToken = (user: JwtPayload): string => {
+export const generateAccessToken = (user: jwtUserPayload): string => {
   return jwt.sign(
     {
       id: user.id,
