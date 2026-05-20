@@ -4,7 +4,7 @@ import { PrismaClient } from "../generated/prisma/client";
 import { env } from "./envConfig";
 
 const adapter = new PrismaPg({
-  connectionString: env.POSTGRE_URL,
+  connectionString: env.DATABASE_URL,
 });
 
 const globalForPrisma = globalThis as unknown as {

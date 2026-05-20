@@ -5,7 +5,7 @@ import { cleanEnv, email, port, str, url } from "envalid";
 export const env = cleanEnv(process.env, {
   PORT: port({ default: 5000 }),
   MONGODB_URI: str(),
-  POSTGRE_URL: str(),
+  DATABASE_URL: str(),
   EMAIL_USER: email(),
   EMAIL_PASS: str(),
   NODE_ENV: str({ choices: ["development", "production"] }),
